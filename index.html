@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的半导体仿真器 - 课程设计</title>
+    <style>
+        /* 简单的样式，让界面好看一点 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .controls {
+            width: 250px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            cursor: pointer;
+        }
+        .value-display {
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+            border-bottom: 2px solid #4CAF50;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左边：画布区域 -->
+        <div>
+            <canvas id="myCanvas" width="700" height="500"></canvas>
+        </div>
+        
+        <!-- 右边：控制面板 -->
+        <div class="controls">
+            <h2>📊 控制面板</h2>
+            
+            <div class="control-group">
+                <label>🌡️ 温度 (K)</label>
+                <input type="range" id="temperature" min="100" max="500" value="300" step="10">
+                <div class="value-display">当前温度: <span id="tempValue">300</span> K</div>
+            </div>
+            
+            <div class="control-group">
+                <label>📈 掺杂浓度 (×10¹⁵ cm⁻³)</label>
+                <input type="range" id="doping" min="1" max="20" value="10" step="1">
+                <div class="value-display">当前掺杂: <span id="dopingValue">10</span> ×10¹⁵</div>
+            </div>
+            
+            <div class="control-group">
+                <label>⚡ 动画速度</label>
+                <input type="range" id="speed" min="0" max="2" value="1" step="0.1">
+                <div class="value-display">速度: <span id="speedValue">1.0</span></div>
+            </div>
+            
+            <button id="toggleAnimBtn">⏸️ 暂停动画</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== 1. 获取页面元素 ==========
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 获取滑块和显示元素
+        const tempSlider = document.getElementById('temperature');
+        const tempSpan = document.getElementById('tempValue');
+        const dopingSlider = document.getElementById('doping');
+        const dopingSpan = document.getElementById('dopingValue');
+        const speedSlider = document.getElementById('speed');
+        const speedSpan = document.getElementById('speedValue');
+        const toggleBtn = document.getElementById('toggleAnimBtn');
+        
+        // ========== 2. 动画控制变量 ==========
+        let isAnimating = true;      // 动画是否运行
+        let time = 0;                // 用于动画的时间变量
+        let animationId = null;      // 动画ID
+        
+        // ========== 3. 读取当前参数值的函数 ==========
+        function getTemperature() {
+            return parseFloat(tempSlider.value);
+        }
+        
+        function getDoping() {
+            return parseFloat(dopingSlider.value);
+        }
+        
+        function getSpeed() {
+            return parseFloat(speedSlider.value);
+        }
+        
+        // ========== 4. 核心绘图函数 ==========
+        function draw() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 获取当前参数
+            let temp = getTemperature();
+            let doping = getDoping();
+            let speed = getSpeed();
+            
+            // ===== 画背景网格 (帮助理解坐标) =====
+            ctx.strokeStyle = "#ddd";
+            ctx.lineWidth = 0.5;
+            for (let x = 50; x < canvas.width - 50; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 50);
+                ctx.lineTo(x, canvas.height - 50);
+                ctx.stroke();
+            }
+            for (let y = 50; y < canvas.height - 50; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(canvas.width - 50, y);
+                ctx.stroke();
+            }
+            
+            // ===== 画坐标轴 =====
+            ctx.beginPath();
+            ctx.moveTo(50, 50);
+            ctx.lineTo(50, canvas.height - 50);
+            ctx.lineTo(canvas.width - 50, canvas.height - 50);
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 坐标轴标签
+            ctx.fillStyle = "#333";
+            ctx.font = "14px Arial";
+            ctx.fillText("能量 (eV)", 20, canvas.height / 2);
+            ctx.fillText("态密度 (DOS)", canvas.width / 2, canvas.height - 20);
+            
+            // ===== 画能带 (简化的两条线) =====
+            let bandGap = 1.12;  // 硅的带隙，单位eV
+            let midY = canvas.height / 2;      // 中间位置对应能量0
+            let scaleY = 100;                   // 1 eV = 100 像素
+            
+            // 导带底 (能量 = +bandGap/2)
+            let cbY = midY - (bandGap / 2) * scaleY;
+            // 价带顶 (能量 = -bandGap/2)
+            let vbY = midY + (bandGap / 2) * scaleY;
+            
+            // 画能带填充区域
+            ctx.fillStyle = "rgba(255, 200, 100, 0.2)";
+            ctx.fillRect(50, cbY, canvas.width - 100, 50);
+            ctx.fillStyle = "rgba(255, 200, 100, 0.2)";
+            ctx.fillRect(50, vbY - 50, canvas.width - 100, 50);
+            
+            // 画能带边界线
+            ctx.beginPath();
+            ctx.moveTo(50, cbY);
+            ctx.lineTo(canvas.width - 50, cbY);
+            ctx.strokeStyle = "#FFA500";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(50, vbY);
+            ctx.lineTo(canvas.width - 50, vbY);
+            ctx.stroke();
+            
+            // 添加文字标签
+            ctx.fillStyle = "#FF8C00";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText("导带底 (CB)", 60, cbY - 5);
+            ctx.fillText("价带顶 (VB)", 60, vbY + 15);
+            
+            // ===== 核心：画DOS曲线（受温度和掺杂影响）=====
+            // 温度影响：温度越高，曲线越"胖"（展宽）
+            // 掺杂影响：掺杂越高，曲线幅度增加
+            
+            let tempFactor = 1 + (temp - 300) / 500;      // 300K时为1，500K时约1.4
+            let dopingFactor = 1 + Math.log10(doping) / 10;  // 掺杂越高，曲线越高
+            
+            // 画导带侧 DOS (抛物线形状)
+            ctx.beginPath();
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 3;
+            
+            let startX = 50;
+            let endX = canvas.width - 50;
+            
+            for (let x = startX; x <= endX; x++) {
+                // x 映射到 能量偏移 (从 0 到 2eV)
+                let energyOffset = ((x - startX) / (endX - startX)) * 2.0;
+                // 抛物线形状: DOS ∝ sqrt(energyOffset) 
+                let dosValue = Math.sqrt(energyOffset) * 1.5 * tempFactor * dopingFactor;
+                // 限制最大值
+                if (dosValue > 1.2) dosValue = 1.2;
+                
+                // 计算y坐标：y从cbY往下画
+                let y = cbY + dosValue * 80;
+                if (x === startX) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // 画价带侧 DOS (左侧的抛物线，对称)
+            ctx.beginPath();
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 3;
+            for (let x = startX; x <= endX; x++) {
+                let energyOffset = ((endX - x) / (endX - startX)) * 2.0;
+                let dosValue = Math.sqrt(energyOffset) * 1.2 * tempFactor * dopingFactor;
+                if (dosValue > 1.0) dosValue = 1.0;
+                let y = vbY - dosValue * 80;
+                if (x === startX) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // ===== 画费米能级（随掺杂移动）=====
+            let fermiLevel = 0;
+            if (doping > 10) {
+                fermiLevel = 0.2 * Math.min(1, (doping - 10) / 10);
+            } else if (doping < 10) {
+                fermiLevel = -0.2 * Math.min(1, (10 - doping) / 10);
+            }
+            let fermiY = midY - fermiLevel * scaleY;
+            
+            // 画红色虚线
+            ctx.beginPath();
+            ctx.moveTo(50, fermiY);
+            ctx.lineTo(canvas.width - 50, fermiY);
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);  // 恢复实线
+            
+            ctx.fillStyle = "#ef4444";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText("费米能级 E_F", 60, fermiY - 5);
+            
+            // ===== 添加热载流子动画（温度高于300K时出现）=====
+            if (temp > 300 && isAnimating) {
+                // 利用time变量让载流子移动
+                let numCarriers = Math.floor((temp - 300) / 50) + 1;
+                if (numCarriers > 8) numCarriers = 8;
+                
+                for (let i = 0; i < numCarriers; i++) {
+                    let phase = time * 1.5 + i * 2.0;
+                    // 水平移动
+                    let x = 80 + (canvas.width - 160) * (0.5 + 0.4 * Math.sin(phase));
+                    // 垂直位置：电子在导带附近，空穴在价带附近
+                    let y;
+                    if (i % 2 === 0) {
+                        y = cbY + 20 + 10 * Math.sin(phase * 1.2);
+                        ctx.fillStyle = "rgba(59, 130, 246, 0.8)";
+                    } else {
+                        y = vbY - 20 + 10 * Math.sin(phase * 1.2);
+                        ctx.fillStyle = "rgba(239, 68, 68, 0.8)";
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.font = "10px Arial";
+                    if (i % 2 === 0) {
+                        ctx.fillText("e⁻", x-2, y+3);
+                    } else {
+                        ctx.fillText("h⁺", x-2, y+3);
+                    }
+                }
+            }
+            
+            // ===== 显示当前参数的文字 =====
+            ctx.fillStyle = "#333";
+            ctx.font = "12px Arial";
+            ctx.fillText(`温度: ${temp} K`, canvas.width - 120, 30);
+            ctx.fillText(`掺杂: ${doping} ×10¹⁵`, canvas.width - 120, 50);
+        }
+        
+        // ========== 5. 动画循环 ==========
+        function animate() {
+            if (isAnimating) {
+                // 根据速度增加时间
+                time += 0.03 * getSpeed();
+            }
+            draw();  // 每一帧都重新绘图
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // ========== 6. 更新显示数值（滑块事件） ==========
+        function updateValues() {
+            tempSpan.textContent = tempSlider.value;
+            dopingSpan.textContent = dopingSlider.value;
+            speedSpan.textContent = speedSlider.value;
+            // 不需要立即重绘，动画会每帧自动重绘
+        }
+        
+        // 绑定滑块事件
+        tempSlider.addEventListener('input', updateValues);
+        dopingSlider.addEventListener('input', updateValues);
+        speedSlider.addEventListener('input', updateValues);
+        
+        // 暂停/恢复按钮
+        toggleBtn.addEventListener('click', function() {
+            isAnimating = !isAnimating;
+            this.textContent = isAnimating ? "⏸️ 暂停动画" : "▶️ 启动动画";
+        });
+        
+        // ========== 7. 启动一切 ==========
+        updateValues();      // 初始化显示
+        animate();           // 启动动画循环
+    </script>
+</body>
+</html>
