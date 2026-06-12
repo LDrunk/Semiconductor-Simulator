@@ -1,1714 +1,771 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <!-- ==================== 文档元信息 ==================== -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PN结二极管仿真</title>
-    
-    <!-- ==================== 页面样式表 (CSS) ==================== -->
+    <title>异质结能带演变与特性精细仿真系统 - 完美断崖版</title>
     <style>
-        /* ---------- 全局重置 & 基础布局 ---------- */
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #151f32;
+            --border-color: #243552;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+        }
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
         }
+
         body {
-            background: #f1f5f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            overflow-y: auto; 
             min-height: 100vh;
-            padding: 12px;
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            color: #212529;
-            user-select: none;
         }
-        .main {
-            width: 100%;
-            max-width: 1200px;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
-            border: 1px solid #dee2e6;
-            overflow: hidden;
-        }
-        
-        /* ---------- 头部区域 ---------- */
-        .header {
-            padding: 14px 24px;
-            border-bottom: 1px solid #dee2e6;
+
+        header {
+            background-color: var(--panel-bg);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 16px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            background: #f8f9fa;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        .header h1 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e3a8a, #39c5bb);
+
+        header h1 {
+            font-size: 20px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
-        .badge {
-            font-size: .7rem;
-            padding: 5px 12px;
-            border-radius: 20px;
-            background: #e9ecef;
-            border: 1px solid #dee2e6;
-            color: #6c757d;
+
+        .junction-badge {
+            background-color: #0284c7;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 8px rgba(2, 132, 199, 0.4);
         }
-        
-        /* ---------- 控制面板区域 ---------- */
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 14px;
-            padding: 12px 20px;
-            border-bottom: 1px solid #dee2e6;
-            background: #f8f9fa;
+
+        .main-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            flex-wrap: wrap;
         }
-        .ctrl {
+
+        .side-panel {
+            flex: 1;
+            min-width: 300px;
+            max-width: 340px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 16px;
         }
-        .ctrl label {
-            font-size: .7rem;
-            font-weight: 600;
-            color: #6c757d;
+
+        .center-area {
+            flex: 2;
+            min-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
-        select, input[type=range] {
-            background: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 7px;
-            padding: 7px 10px;
-            font-size: .85rem;
+
+        .card {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 18px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--accent-blue);
+            border-left: 4px solid var(--accent-blue);
+            padding-left: 8px;
+            margin-bottom: 12px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        .control-group label .val {
+            color: var(--text-main);
+            font-weight: bold;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 13px;
             outline: none;
-            color: #212529;
-            cursor: pointer;
-            font-family: inherit;
         }
-        select:hover, select:focus {
-            border-color: #39c5bb;
-        }
-        input[type=range] {
-            appearance: none;
+
+        input[type="range"] {
             -webkit-appearance: none;
             height: 6px;
-            background: #ced4da;
-            margin: 4px 0;
-            padding: 0;
+            cursor: pointer;
         }
-        input[type=range]::-webkit-slider-thumb {
-            appearance: none;
-            width: 22px;
-            height: 22px;
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background: #fff;
-            border: 2px solid #39c5bb;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: var(--accent-blue);
         }
-        .range-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: .65rem;
-            color: #6c757d;
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
         }
-        .btn-row {
-            display: flex;
-            gap: 6px;
-        }
+
         .btn {
-            padding: 7px 14px;
-            border-radius: 7px;
-            border: 1px solid #dee2e6;
-            background: #fff;
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px;
+            font-size: 12px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: .78rem;
-            font-weight: 600;
-            transition: all .18s;
-            font-family: inherit;
+            text-align: center;
         }
-        .btn:hover {
-            background: #e9ecef;
+
+        .btn.active, .btn:hover {
+            background-color: var(--accent-blue);
+            color: #0b0f19;
+            font-weight: bold;
         }
-        .btn.active {
-            background: #39c5bb;
-            color: #fff;
-            border-color: #39c5bb;
-        }
-        
-        /* ---------- 主视图区域 (画布容器) ---------- */
-        .row {
-            display: flex;
-            gap: 10px;
-            padding: 10px 14px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .canvas-wrap {
+
+        .canvas-wrapper {
             position: relative;
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid #dee2e6;
-            overflow: hidden;
-            flex: 1 1 580px;
-            min-width: 400px;
-            max-width: 750px;
-            min-height: 500px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-        }
-        .canvas-wrap.iv {
-            flex: 0 0 340px;
-            min-width: 280px;
-            max-width: 380px;
-            min-height: 500px;
-        }
-        .canvas-label {
-            position: absolute;
-            top: 10px;
-            left: 14px;
-            font-size: .75rem;
-            font-weight: 600;
-            color: #6c757d;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 4px 10px;
+            height: 440px; 
+            background-color: #090d16;
             border-radius: 6px;
-            border: 1px solid #dee2e6;
-            z-index: 5;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
         }
+
         canvas {
-            display: block;
             width: 100%;
             height: 100%;
-        }
-        
-        /* ---------- 响应式适配 ---------- */
-        @media (max-width: 900px) {
-            .row {
-                flex-direction: column;
-            }
-            .canvas-wrap, .canvas-wrap.iv {
-                flex: 1 1 auto;
-                min-width: auto;
-                max-width: none;
-                height: 400px;
-            }
-        }
-                /* ---------- 响应式适配 ---------- */
-        @media (max-width: 900px) {
-            .row {
-                flex-direction: column;
-            }
-            .canvas-wrap, .canvas-wrap.iv {
-                flex: 1 1 auto;
-                min-width: auto;
-                max-width: none;
-                height: 400px;
-            }
-        }
-        
-        /* ==================== 新增：动态背景与微光效 ==================== */
-        
-        /* 动态背景渐变 - 修改 body 样式 */
-        body {
-            background: linear-gradient(135deg, #4fd2e3 0%, #46c2bc 100%);
-            animation: gradientShift 15s ease infinite;
-            background-size: 200% 200%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 12px;
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            color: #212529;
-            user-select: none;
-        }
-        
-        /* 渐变动画 */
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* 主卡片微光效 */
-        .main {
-            transition: box-shadow 0.3s ease, transform 0.2s ease;
-        }
-        
-        .main:hover {
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        /* 画布容器悬停效果 */
-        .canvas-wrap {
-            transition: box-shadow 0.3s ease, transform 0.2s ease;
-        }
-        
-        .canvas-wrap:hover {
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
-            transform: translateY(-1px);
-        }
-        
-        /* 按钮交互微光 */
-        .btn {
-            transition: all 0.2s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-        }
-        
-        /* 滑块聚焦发光 */
-        input[type="range"]:focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-            outline: none;
-        }
-        
-        /* 控制面板区域微光 */
-        .controls {
-            transition: box-shadow 0.3s ease;
-        }
-        
-        .controls:hover {
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05), 0 2px 8px rgba(99,102,241,0.1);
-        }
-            /* ==================== 图表增强样式（渐变版） ==================== */
-        
-        /* 能带图画布容器 - 淡蓝紫渐变 */
-        .canvas-wrap:first-child {
-            background: linear-gradient(135deg, 
-        rgba(57, 197, 187, 0.1) 0%,
-        rgba(80, 220, 190, 0.05) 50%,
-        rgba(57, 197, 187, 0.11) 100%);
-
-        }
-        
-        /* IV曲线画布容器 - 淡橙红渐变 */
-        .canvas-wrap.iv {
-            background: linear-gradient(135deg, 
-        rgba(57, 197, 187, 0.12) 0%,
-        rgba(50, 180, 200, 0.08) 50%,
-        rgba(57, 197, 187, 0.12) 100%);
-        }
-        
-        /* 图表悬浮光晕 */
-        .canvas-wrap {
-            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-        }
-        
-        .canvas-wrap:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* 发光边框动画 */
-        .canvas-wrap {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .canvas-wrap::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                45deg,
-                transparent 30%,
-                rgba(59, 130, 246, 0.05) 50%,
-                transparent 70%
-            );
-            transform: rotate(45deg);
-            animation: shimmer 8s infinite;
-            pointer-events: none;
-            z-index: 2;
-        }
-        
-        @keyframes shimmer {
-            0% {
-                transform: translateX(-100%) translateY(-100%) rotate(45deg);
-            }
-            100% {
-                transform: translateX(100%) translateY(100%) rotate(45deg);
-            }
-        }
-        
-        /* 图表标签样式 */
-        .canvas-label {
-            background: rgba(226, 247, 243, 0.95);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-        
-        /* 画布内部阴影增强立体感 */
-        canvas {
-            filter: drop-shadow(0 2px 4px rgba(18, 36, 37, 0.02));
-        }
-        
-                /* ==================== 数据卡片样式 ==================== */
-        .data-card {
-            background: linear-gradient(135deg, rgba(57, 197, 187, 0.05), rgba(80, 220, 190, 0.05));
-            border-radius: 12px;
-            padding: 12px 20px;
-            margin: 0 14px 10px 14px;
-            border: 1px solid rgba(57, 197, 187, 0.2);
-            backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
+            display: block;
         }
 
-        .data-card:hover {
-            border-color: rgba(57, 197, 187, 0.5);
-            box-shadow: 0 4px 12px rgba(57, 197, 187, 0.1);
-        }
-
-        .data-grid {
+        .bottom-charts {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
         }
 
-        /* .data-grid + .data-grid {
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed rgba(57, 197, 187, 0.2);
-        } */
-
-                /* 少数载流子单独一行样式 */
-        /* 少数载流子单独一行样式 */
-        .minority-grid {
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed rgba(57, 197, 187, 0.3);
-            display: flex;
-            justify-content: center;
-            gap: 60px;
-        }
-        
-        .minority-grid .data-item {
-            min-width: 260px;
-            flex-shrink: 0;
-        }
-        
-        @media (max-width: 768px) {
-            .minority-grid {
-                flex-direction: column;
-                gap: 12px;
-                align-items: center;
-            }
-        }
-
-        .data-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 8px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
-        .data-label {
-            font-weight: 600;
-            color: #4b5563;
-            letter-spacing: 0.3px;
-            flex-shrink: 0;
-        }
-
-        .data-value {
-            font-family: 'JetBrains Mono', 'SF Mono', monospace;
-            font-weight: 700;
-            color: #0d4d73;
-            background: rgba(13, 77, 115, 0.08);
-            padding: 2px 8px;
-            border-radius: 12px;
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .data-unit {
-            font-size: 0.7rem;
-            color: #6c757d;
-            margin-left: 2px;
-            flex-shrink: 0;
-        }
-
-        .data-item span {
-            display: inline-block;
-        }
-
-        @media (max-width: 768px) {
-            .data-grid {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-            .data-item {
-                white-space: normal;
-                flex-wrap: wrap;
-                justify-content: space-between;
-            }
-            .data-label {
-                flex-shrink: 1;
-            }
-            .data-value {
-                flex-shrink: 1;
-            }
-        }
-
-                /* ==================== 按钮工具栏样式 ==================== */
-        .toolbar {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin: 0 14px 10px 14px;
-            flex-wrap: wrap;
-        }
-        
-        .preset-bar {
-            display: flex;
-            gap: 8px;
-            margin: 0 14px 10px 14px;
-            flex-wrap: wrap;
-            align-items: center;
-            padding-bottom: 5px;
-            border-bottom: 1px solid rgba(57, 197, 187, 0.2);
-        }
-        
-        .preset-label {
-            font-size: 0.7rem;
-            color: #6c757d;
+        .stage-banner {
+            background: rgba(9, 13, 22, 0.9);
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            text-align: center;
             font-weight: 500;
         }
-        
-        .btn-sm {
-            padding: 5px 12px;
-            font-size: 0.7rem;
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 6px;
         }
-        
-        .btn-export {
-            background: #39c5bb;
-            color: white;
-            border-color: #39c5bb;
+
+        .param-table th, .param-table td {
+            padding: 6px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
         }
-        
-        .btn-export:hover {
-            background: #2da89f;
-            transform: translateY(-1px);
-        }
-        
-        .badge-bias {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        
-        .bias-forward {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-        
-        .bias-reverse {
-            background: rgba(59, 130, 246, 0.15);
-            color: #3b82f6;
-        }
-        
-        .bias-zero {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-        }
-        /* ==================== 鼠标坐标提示样式 ==================== */
-        .coords-tooltip {
-            position: fixed;
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 4px 10px;
-            border-radius: 6px;
+
+        .param-table th { color: #64748b; }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
             font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
-            pointer-events: none;
-            z-index: 100;
-            white-space: nowrap;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(57, 197, 187, 0.5);
-            transition: opacity 0.2s ease;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 6px;
         }
-    </style>
+
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .line-dot { width: 12px; height: 4px; }
+        .circle-dot { width: 8px; height: 8px; border-radius: 50%; }
     </style>
 </head>
 <body>
 
-<!-- ==================== 主容器 ==================== -->
-<div class="main">
-    <!-- 头部标题区 -->
-    <div class="header">
-        <h1>🔬 PN 结二极管仿真</h1>
-        <span class="badge">能带 · 耗尽层 · I–V · 载流子</span>
+    <header>
+        <h1>异质结能带演变与特性精细仿真系统</h1>
+        <div id="junction-badge" class="junction-badge">正在识别结类型...</div>
+    </header>
+
+    <div class="main-layout">
+        
+        <div class="side-panel">
+            <div class="card">
+                <div class="card-title">左半导体 (Region 1)</div>
+                <div class="control-group">
+                    <label>材料选择</label>
+                    <select id="mat1">
+                        <option value="GaAs" selected>GaAs (砷化镓)</option>
+                        <option value="Si">Si (硅)</option>
+                        <option value="Ge">Ge (锗)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>导电类型</label>
+                    <select id="type1">
+                        <option value="p" selected>P 型</option>
+                        <option value="n">N 型</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>掺杂浓度 N₁ <span class="val" id="lbl-na">1.0e16 cm⁻³</span></label>
+                    <input type="range" id="range-na" min="14" max="18" step="0.2" value="16">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">右半导体 (Region 2)</div>
+                <div class="control-group">
+                    <label>材料选择</label>
+                    <select id="mat2">
+                        <option value="Si" selected>Si (硅)</option>
+                        <option value="Ge">Ge (锗)</option>
+                        <option value="GaAs">GaAs (砷化镓)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>导电类型</label>
+                    <select id="type2">
+                        <option value="n" selected>N 型</option>
+                        <option value="p">P 型</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>掺杂浓度 N₂ <span class="val" id="lbl-nd">1.0e16 cm⁻³</span></label>
+                    <input type="range" id="range-nd" min="14" max="18" step="0.2" value="16">
+                </div>
+            </div>
+        </div>
+
+        <div class="center-area">
+            <div id="stage-banner" class="stage-banner">第一步: 真空能级对齐</div>
+            <div class="canvas-wrapper">
+                <canvas id="bandCanvas"></canvas>
+            </div>
+
+            <div class="bottom-charts">
+                <div class="card">
+                    <div class="card-title">空间电荷分布 ＆ 耗尽宽度</div>
+                    <div style="height: 120px;"><canvas id="chargeCanvas"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">I-V 伏安特性同步工作点</div>
+                    <div style="height: 120px;"><canvas id="ivCanvas"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="card">
+                <div class="card-title">第一步 → 第三步 平滑过渡动画</div>
+                <div class="control-group">
+                    <label style="color:#60a5fa; font-weight:bold;">拖动查看费米能级对准过程：<span class="val" id="lbl-stage">0%</span></label>
+                    <input type="range" id="range-stage" min="0" max="1" step="0.01" value="0" style="background:#1e293b; height:10px;">
+                </div>
+                <p style="font-size:11px; color:#94a3b8; line-height:1.4;">
+                    提示：演变未达到 100% 前系统处于独立/接触中状态，外加电压锁定为 0。完全建立平衡后方可加压。
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">环境与外加电压控制</div>
+                <div class="control-group">
+                    <label>工作温度 T <span class="val" id="lbl-temp">300 K</span></label>
+                    <input type="range" id="range-temp" min="250" max="400" step="5" value="300">
+                </div>
+                <div class="control-group">
+                    <label>外加电压 Vₐ (正偏 / 反偏) <span class="val" id="lbl-bias">0.00 V</span></label>
+                    <input type="range" id="range-bias" min="-2" max="2" step="0.04" value="0">
+                </div>
+                <div class="control-group">
+                    <label>微观粒子动画流速</label>
+                    <div class="btn-group">
+                        <div class="btn" id="sp-05">0.5x</div>
+                        <div class="btn active" id="sp-10">1.0x</div>
+                        <div class="btn" id="sp-20">2.0x</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">实时演算参数</div>
+                <table class="param-table">
+                    <tr><th>参数</th><th>左侧</th><th>右侧</th></tr>
+                    <tr><td>禁带 E_g</td><td id="m-eg1">-</td><td id="m-eg2">-</td></tr>
+                    <tr><td>亲和势 χ</td><td id="m-chi1">-</td><td id="m-chi2">-</td></tr>
+                    <tr><td>接触势垒 V_D</td><td colspan="2" style="text-align:center;color:var(--accent-blue);" id="m-vd">-</td></tr>
+                    <tr><td>耗尽总宽 W</td><td colspan="2" style="text-align:center;color:var(--accent-green);" id="m-w">-</td></tr>
+                </table>
+
+                <div class="legend">
+                    <div class="legend-item"><div class="line-dot" style="background:#ef4444;"></div><span>导带 Ec</span></div>
+                    <div class="legend-item"><div class="line-dot" style="background:#3b82f6;border-top:1px dashed #3b82f6;height:0;"></div><span>费米 Ef</span></div>
+                    <div class="legend-item"><div class="line-dot" style="background:#10b981;"></div><span>价带 Ev</span></div>
+                    <div class="legend-item"><div class="line-dot" style="background:#ffffff;border-top:1px dotted #fff;height:0;"></div><span>真空 E0</span></div>
+                    <div class="legend-item"><div class="circle-dot" style="background:#60a5fa;"></div><span>电子 (e)</span></div>
+                    <div class="legend-item"><div class="circle-dot" style="background:#f43f5e;"></div><span>空穴 (h)</span></div>
+                </div>
+            </div>
+        </div>
+
     </div>
-    
-    <!-- 动态控制面板 (由JS动态填充，但保留容器) -->
-    <div class="controls" id="controls"></div>
 
-        <!-- 实时数据卡片 -->
-        <div class="data-card" id="dataCard">
-            <!-- 第一行：基本参数 -->
-            <div class="data-grid">
-                <div class="data-item"><span class="data-label">耗尽层宽度</span><span class="data-value" id="depletionWidth">--</span><span class="data-unit">μm</span></div>
-                <div class="data-item"><span class="data-label">内建电势</span><span class="data-value" id="builtinVoltage">--</span><span class="data-unit">V</span></div>
-                <div class="data-item"><span class="data-label">电流 (总)</span><span class="data-value" id="currentValue">--</span><span class="data-unit">A</span></div>
-                <div class="data-item"><span class="data-label">偏置状态</span><span class="data-value" id="biasType" style="background: none; padding-left: 0;">--</span></div>
-            </div>
-            <!-- 第二行：浓度参数 -->
-            <div class="data-grid">
-                <div class="data-item"><span class="data-label">P区空穴浓度</span><span class="data-value" id="holeConcP">--</span><span class="data-unit">cm⁻³</span></div>
-                <div class="data-item"><span class="data-label">N区电子浓度</span><span class="data-value" id="electronConcN">--</span><span class="data-unit">cm⁻³</span></div>
-                <div class="data-item"><span class="data-label">本征载流子浓度</span><span class="data-value" id="intrinsicConc">--</span><span class="data-unit">cm⁻³</span></div>
-            </div>
-            <!-- 第三行：少数载流子（单独一行） -->
-            <div class="data-grid minority-grid">
-                <div class="data-item"><span class="data-label">P区少数载流子 (电子)</span><span class="data-value" id="pMinority">--</span><span class="data-unit">cm⁻³</span></div>
-                <div class="data-item"><span class="data-label">N区少数载流子 (空穴)</span><span class="data-value" id="nMinority">--</span><span class="data-unit">cm⁻³</span></div>
-            </div>
-        </div>
-
-        <!-- 工具栏 -->
-        <div class="preset-bar">
-            <span class="preset-label">📌 快速预设：</span>
-            <button class="btn btn-sm" id="presetSi">硅 (Si) 室温</button>
-            <button class="btn btn-sm" id="presetGe">锗 (Ge) 室温</button>
-            <button class="btn btn-sm" id="presetGaAs">砷化镓 (GaAs)</button>
-            <button class="btn btn-sm" id="presetHeavyN">重掺杂 N⁺</button>
-            <button class="btn btn-sm" id="presetHeavyP">重掺杂 P⁺</button>
-            <button class="btn btn-sm" id="presetHighTemp">高温 400K</button>
-            <button class="btn btn-sm" id="presetLowTemp">低温 250K</button>
-        </div>
-        
-        <div class="toolbar">
-            <button class="btn btn-export" id="exportBtn">📊 导出 IV 数据 (CSV)</button>
-            <button class="btn btn-export" id="exportScreenshotBtn">📸 截图保存</button>
-        </div>
-    
-    <!-- 图形绘制区：左侧能带图 + 右侧IV特性曲线 -->
-    <div class="row">
-        <div class="canvas-wrap">
-            <div class="canvas-label">能带图 & 载流子动画</div>
-            <canvas id="bandCvs"></canvas>
-        </div>
-        <div class="canvas-wrap iv">
-            <div class="canvas-label">I–V 特性曲线</div>
-            <canvas id="ivCvs"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- ==================== 核心仿真脚本 (JavaScript) ==================== -->
-<script>
-(function(){
-    // ======================= 1. 物理常量与材料数据库 (未修改) =======================
-    const q = 1.602176634e-19;          // 电子电荷 [C]
-    const k_eV = 8.617333262e-5;        // 玻尔兹曼常数 [eV/K]
-    const eps0 = 8.854187817e-14;       // 真空介电常数 [F/cm]
-    
-    const mats = {
-        Si:   { E0: 1.12, ni300: 1.5e10, eps: 11.7, mun: 1350, mup: 480, tn: 1e-6, tp: 1e-6 },
-        Ge:   { E0: 0.67, ni300: 2.4e13, eps: 16,   mun: 3900, mup: 1900, tn: 1e-6, tp: 1e-6 },
-        GaAs: { E0: 1.42, ni300: 1.8e6,  eps: 12.9, mun: 8000, mup: 400,  tn: 1e-8, tp: 1e-8 }
-    };
-    
-    // ======================= 2. 仿真状态变量 (可调参数) =======================
-    let mat = 'Si';          // 当前材料: Si / Ge / GaAs
-    let T = 300;             // 温度 [K]
-    let Na = 1e16;           // P区受主浓度 [cm^-3]
-    let Nd = 1e16;           // N区施主浓度 [cm^-3]
-    let Vapp = 0;            // 外加偏压 [V]
-    let spd = 1;             // 动画速度因子 (0.5/1/2)
-    let parts = [];          // 载流子粒子数组 (用于动画)
-    const MAXP = 80;         // 最大粒子数量
-    
-    // ======================= 3. DOM 元素引用 =======================
-    const bandCvs = document.getElementById('bandCvs');
-    const bandCtx = bandCvs.getContext('2d');
-    const ivCvs = document.getElementById('ivCvs');
-    const ivCtx = ivCvs.getContext('2d');
-    
-    // ======================= 4. 物理模型核心函数 (能带 / 载流子浓度 / 耗尽层 / 电流) =======================
-    // 禁带宽度随温度变化 (Varshni 近似)
-    function Eg(T) {
-        const m = mats[mat];
-        const a = (mat == 'Si') ? 4.73e-4 : ((mat == 'Ge') ? 4.77e-4 : 5.4e-4);
-        const b = (mat == 'Si') ? 636 : ((mat == 'Ge') ? 235 : 204);
-        return m.E0 - (a * T * T) / (T + b);
-    }
-    
-    // 本征载流子浓度 ni(T)
-    function ni(T) {
-        const m = mats[mat];
-        const E = Eg(T);
-        return m.ni300 * Math.pow(T / 300, 1.5) * Math.exp(-E / (2 * k_eV * T) + m.E0 / (2 * k_eV * 300));
-    }
-    
-    // 内建电势 Vbi
-    function Vbi(Na, Nd, ni, T) {
-        return (ni > 0) ? (k_eV * T * Math.log((Na * Nd) / (ni * ni))) : 0;
-    }
-    
-    // 耗尽层宽度及边界 (返回 W, xn, xp 单位微米)
-    function depl(Na, Nd, Vbi, Vapp, epsr) {
-        const eps = epsr * eps0;
-        const Veff = Math.max(Vbi - Vapp, 0.001);
-        const W = Math.sqrt((2 * eps / q) * (1/Na + 1/Nd) * Veff) * 1e4;   // 单位微米
-        return {
-            W: W,
-            xn: W * Na / (Na + Nd),
-            xp: W * Nd / (Na + Nd)
+    <script>
+        const mats = {
+            'Si':   { eg: 1.12, chi: 4.05, nc: 2.8e19, nv: 1.0e19, eps: 11.7 },
+            'Ge':   { eg: 0.66, chi: 3.65, nc: 1.04e19, nv: 6.0e18, eps: 16.0 }, 
+            'GaAs': { eg: 1.42, chi: 4.45, nc: 4.7e17, nv: 7.0e18, eps: 13.1 }  
         };
-    }
-    
-    // 电流计算 (理想二极管模型，同时返回线性化显示值)
-    function current(Na, Nd, ni, Vapp, T, m) {
-        const Vt = k_eV * T;
-        const Dn = m.mun * Vt;
-        const Dp = m.mup * Vt;
-        const Ln = Math.sqrt(Dn * m.tn) * 1e-4;
-        const Lp = Math.sqrt(Dp * m.tp) * 1e-4;
-        const Is = q * 1e-4 * ni * ni * ( Dn/(Ln * Na) + Dp/(Lp * Nd) );
-        const arg = Math.min(Math.max(Vapp / (1.05 * Vt), -80), 80);
-        const I = Is * (Math.exp(arg) - 1);
-        // disp 用于绘图时的动态范围压缩
-        const disp = I / (1 + Math.abs(I) / 0.5);
-        return { I, disp };
-    }
-    
-    // 封装当前物理状态 (一次性获取所有派生参数)
-    function physics() {
-        const m = mats[mat];
-        const n = ni(T);
-        const vb = Vbi(Na, Nd, n, T);
-        const dp = depl(Na, Nd, vb, Vapp, m.eps);
-        const iv = current(Na, Nd, n, Vapp, T, m);
-        return { m, n, vb, dp, iv };
-    }
-    
-    // ======================= 5. 载流子粒子系统 (动画部分) =======================
-    function spawn(dt) {
-        const ph = physics();
-        // 根据电流大小动态调整粒子产生速率
-        const rate = 8 * (1 + Math.log10(1 + Math.abs(ph.iv.disp) / Math.max(1e-15, Math.abs(ph.iv.I))) * 3) * spd;
-        if (Math.random() < rate * dt && parts.length < MAXP) {
-            const e = Math.random() < 0.5;   // true: 电子, false: 空穴
-            parts.push({
-                x: e ? (0.35 + Math.random() * 0.25) : (-0.35 - Math.random() * 0.25),
-                y: (Math.random() - 0.5) * 0.25,
-                tx: e ? -0.4 : 0.4,
-                e: e,
-                life: 1,
-                speed: 0.08 + Math.random() * 0.18,
-                size: 4.5 + Math.random() * 4
+
+        const q = 1.602e-19, k = 1.38e-23, eps0 = 8.854e-12;
+        let state = {
+            mat1: 'GaAs', type1: 'p', N1: 1e16,
+            mat2: 'Si', type2: 'n', N2: 1e16,
+            temp: 300, bias: 0.0, stage: 0.0, speed: 1.0
+        };
+        let particles = [];
+
+        const cBand = document.getElementById('bandCanvas');
+        const ctxBand = cBand.getContext('2d');
+        const cCharge = document.getElementById('chargeCanvas');
+        const ctxCharge = cCharge.getContext('2d');
+        const cIv = document.getElementById('ivCanvas');
+        const ctxIv = cIv.getContext('2d');
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            [cBand, cCharge, cIv].forEach(c => {
+                const rect = c.parentElement.getBoundingClientRect();
+                c.width = rect.width * dpr;
+                c.height = rect.height * dpr;
             });
         }
-        // 更新每个粒子的位置与生命周期
-        for (let i = parts.length - 1; i >= 0; i--) {
-            const p = parts[i];
-            const dx = p.tx - p.x;
-            const mv = p.speed * spd * (0.6 + 0.4 * Math.abs(Vapp) / 2);
-            p.x += Math.sign(dx) * Math.min(Math.abs(dx), mv * dt * 10);
-            p.y += (Math.random() - 0.5) * 0.015 * spd;
-            p.y = Math.max(-0.38, Math.min(0.38, p.y));
-            p.life -= dt * 0.25 * spd;
-            if (Math.abs(p.x - p.tx) < 0.03 || p.life <= 0) parts.splice(i, 1);
-        }
-        while (parts.length > MAXP) parts.shift();
-    }
-    
-    // ======================= 6. 绘图函数: 能带图 & 载流子动画 =======================
-    function drawBand(ph) {
-        const c = bandCvs, ctx = bandCtx;
-        const dpr = Math.min(devicePixelRatio || 1, 2);
-        const rect = c.parentElement.getBoundingClientRect();
-        const w = rect.width - 2, h = Math.max(500, rect.height - 2);
-        c.width = w * dpr;
-        c.height = h * dpr;
-        c.style.width = w + 'px';
-        c.style.height = h + 'px';
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(dpr, dpr);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, w, h); 
-        
-        const { dp } = ph;
-        const Wdep = Math.max(dp.W, 0.015);
-        const xAxisRange = Math.max(Wdep * 5, 1.5);
-        const xMin = -xAxisRange / 2;
-        const xMax = xAxisRange / 2;
-        const pL = 60, pR = 50, pT = 50, pB = 100;
-        const pW = w - pL - pR;
-        const pH = h - pT - pB;
-        const toX = (x) => pL + ((x - xMin) / (xMax - xMin)) * pW;
-        
-        const E = Eg(T);
-        const Ec_P = 0.35;
-        const Ev_P = Ec_P - E;
-        const Ef_P = Ec_P - 0.5 * E - k_eV * T * Math.log(Na / ph.n);
-        const Ec_N = Ec_P - ph.vb + Vapp;
-        const Ev_N = Ec_N - E;
-        const Ef_N = Ec_N - 0.5 * E + k_eV * T * Math.log(Nd / ph.n);
-        
-        const curve = (x) => {
-            let t = (x + Wdep / 2) / Math.max(Wdep, 0.001);
-            return 1 / (1 + Math.exp(-(Math.max(0, Math.min(1, t)) - 0.5) * 12));
-        };
-        const EcAt = (x) => Ec_P + (Ec_N - Ec_P) * curve(x);
-        const EvAt = (x) => Ev_P + (Ev_N - Ev_P) * curve(x);
-        const EfAt = (x) => Ef_P + (Ef_N - Ef_P) * curve(x);
-        
-        const eMin = Math.min(Ev_P, Ev_N) - 0.2;
-        const eMax = Math.max(Ec_P, Ec_N) + 0.2;
-        const toY = (e) => pT + ((eMax - e) / (eMax - eMin)) * pH;
-        
-        // 绘制网格线
-        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-        ctx.lineWidth = 0.6;
-        for (let i = 0; i <= 8; i++) {
-            const y = pT + i * pH / 8;
-            ctx.beginPath();
-            ctx.moveTo(pL, y);
-            ctx.lineTo(w - pR, y);
-            ctx.stroke();
-        }
-        for (let i = 0; i <= 6; i++) {
-            const x = pL + i * pW / 6;
-            ctx.beginPath();
-            ctx.moveTo(x, pT);
-            ctx.lineTo(x, h - pB);
-            ctx.stroke();
-        }
+        window.addEventListener('resize', resize);
 
-        // ========== 添加坐标轴数值标注 ==========
-        // X轴 (位置) 刻度：从 xMin 到 xMax 均匀取5个点
-        ctx.fillStyle = '#4b5563';
-        ctx.font = '10px "Segoe UI", "PingFang SC", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-
-        const xTicks = 5;
-        for (let i = 0; i <= xTicks; i++) {
-        const xVal = xMin + (xMax - xMin) * i / xTicks;
-        const sx = toX(xVal);
-        // 只显示保留两位小数的数值
-        const xLabel = xVal.toFixed(2);
-        ctx.fillText(xLabel, sx, h - pB + 5);
-}
-
-        // Y轴 (能量) 刻度
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        const yTicks = 6;
-        for (let i = 0; i <= yTicks; i++) {
-        const eVal = eMin + (eMax - eMin) * i / yTicks;
-        const sy = toY(eVal);
-        const eLabel = eVal.toFixed(2);
-        ctx.fillText(eLabel, pL - 8, sy);
-}
-        
-        // 耗尽层高亮背景
-        const xLeft = toX(-dp.xp);
-        const xRight = toX(dp.xn);
-        ctx.fillStyle = 'rgba(57, 197, 187, 0.2)';
-        ctx.fillRect(xLeft, pT, xRight - xLeft, pH);
-        ctx.strokeStyle = 'rgba(255,140,60,0.5)';
-        ctx.setLineDash([6, 4]);
-        ctx.beginPath();
-        ctx.moveTo(xLeft, pT);
-        ctx.lineTo(xLeft, h - pB);
-        ctx.moveTo(xRight, pT);
-        ctx.lineTo(xRight, h - pB);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // 绘制能带线条 (导带、价带、费米能级)
-        const drawLine = (fn, color, w, d = []) => {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = w;
-            ctx.setLineDash(d);
-            ctx.beginPath();
-            for (let i = 0; i <= 300; i++) {
-                const x = xMin + (xMax - xMin) * i / 300;
-                const sx = toX(x);
-                const sy = toY(fn(x));
-                if (i === 0) ctx.moveTo(sx, sy);
-                else ctx.lineTo(sx, sy);
-            }
-            ctx.stroke();
-            ctx.setLineDash([]);
-        };
-        drawLine(EcAt, '#2dd4bf', 2.8);
-        drawLine(EvAt, '#c084fc', 2.8);
-        drawLine(EfAt, '#fb923c', 2, [8, 4]);
-
-        // 计算费米能级在当前显示区域中心位置的数值
-        const fermiEnergyAtCenter = EfAt(0);  // 在 x=0 位置（耗尽层中心附近）的费米能级值
-        const fermiY = toY(fermiEnergyAtCenter);
-
-        // 在费米能级虚线旁边添加数值标签（跟随虚线移动）
-        ctx.font = '14px "Segoe UI", "PingFang SC", sans-serif';
-        ctx.fillStyle = '#fb923c';
-        ctx.shadowBlur = 0;
-
-        // 智能判断标签应该放在左侧还是右侧（避免和曲线重叠）
-        // 获取费米能级在左右两端的数值，判断斜率方向
-        const fermiLeft = EfAt(xMin);
-        const fermiRight = EfAt(xMax);
-        const isIncreasing = fermiRight > fermiLeft;
-
-        let labelX, textAlign;
-        if (isIncreasing) {
-        // 曲线向右上升，标签放在右侧
-        labelX = toX(xMax * 0.55);
-        textAlign = 'left';
-        } else {
-        // 曲线向右下降，标签放在左侧
-        labelX = toX(xMin * 0.55);
-        textAlign = 'right';
-}
-
-        ctx.textAlign = textAlign;
-        ctx.textBaseline = 'middle';
-
-        // 绘制标签背景（半透明白色，提高可读性）
-        const labelText = `Ef = ${fermiEnergyAtCenter.toFixed(3)} eV`;
-        const metrics = ctx.measureText(labelText);
-        const labelWidth = metrics.width;
-        const labelHeight = 16;
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        if (textAlign === 'left') {
-            ctx.fillRect(labelX, fermiY - labelHeight/2, labelWidth + 8, labelHeight);
-            ctx.fillStyle = '#fb923c';
-            ctx.fillText(labelText, labelX + 4, fermiY);
-        } else {
-        ctx.fillRect(labelX - labelWidth - 8, fermiY - labelHeight/2, labelWidth + 8, labelHeight);
-        ctx.fillStyle = '#fb923c';
-        ctx.fillText(labelText, labelX - 4, fermiY);
-        }
-
-        // 画一条连接线指向费米能级线
-        ctx.beginPath();
-        if (textAlign === 'left') {
-        ctx.moveTo(labelX + labelWidth + 4, fermiY);
-        ctx.lineTo(labelX + labelWidth + 12, fermiY);
-        } else {
-        ctx.moveTo(labelX - labelWidth - 4, fermiY);
-        ctx.lineTo(labelX - labelWidth - 12, fermiY);
-        }
-        ctx.strokeStyle = '#fb923c';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        
-        // 标注势垒高度
-        const barrier = Math.abs(EcAt(-dp.xp) - EcAt(dp.xn));
-        ctx.fillStyle = '#fb923c';
-        ctx.font = 'bold 13px "Segoe UI","PingFang SC",sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`势垒 ${barrier.toFixed(3)} eV`, (xLeft + xRight) / 2, toY((EcAt(-dp.xp) + EcAt(dp.xn)) / 2) - 10);
-        
-        // 绘制载流子粒子 (电子/空穴)
-        for (const p of parts) {
-            const px = toX(p.x * xAxisRange);
-            const py = toY(p.e ? EcAt(p.x * xAxisRange) : EvAt(p.x * xAxisRange)) + p.y * pH * 0.15;
-            const grad = ctx.createRadialGradient(px, py, p.size * 0.2, px, py, p.size);
-            if (p.e) {
-                grad.addColorStop(0, 'rgba(45, 212, 191, 0.95)');
-                grad.addColorStop(0.4, 'rgba(20, 184, 166, 0.8)');
-                grad.addColorStop(1, 'rgba(13, 148, 136, 0)');
-            } else {
-                grad.addColorStop(0, 'rgba(192, 132, 252, 0.95)');
-                grad.addColorStop(0.4, 'rgba(168, 85, 247, 0.8)');
-                grad.addColorStop(1, 'rgba(147, 51, 234, 0)');
-            }
-            ctx.globalAlpha = p.life;
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(px, py, p.size, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-        
-        // 坐标轴文字标注
-        ctx.fillStyle = '#4b5563';
-        ctx.font = 'bold 13px "Segoe UI","PingFang SC",sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('位置 [μm]', w / 2, h - 30);
-        ctx.font = '12px "Segoe UI","PingFang SC",sans-serif';
-        ctx.fillText('P 区', pL + pW * 0.15, h - 30 + 18);
-        ctx.fillText('N 区', pL + pW * 0.85, h - 30 + 18);
-        ctx.fillText('耗尽层', (xLeft + xRight) / 2, pT - 8);
-        ctx.fillText(`W=${Wdep.toFixed(3)}μm`, (xLeft + xRight) / 2, pT + 8);
-        ctx.save();
-        ctx.translate(14, pT + pH / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText('电子能量 [eV]', 0, 0);
-        ctx.restore();
-    }
-    
-    // ======================= 7. 绘图函数: I-V 特性曲线 =======================
-    function drawIV(ph) {
-        const c = ivCvs, ctx = ivCtx;
-        const dpr = Math.min(devicePixelRatio || 1, 2);
-        const rect = c.parentElement.getBoundingClientRect();
-        const w = rect.width - 2, h = Math.max(500, rect.height - 2);
-        c.width = w * dpr;
-        c.height = h * dpr;
-        c.style.width = w + 'px';
-        c.style.height = h + 'px';
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(dpr, dpr);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, w, h);
-        
-        const pL = 70, pR = 35, pT = 40, pB = 100;
-        const pW = w - pL - pR;
-        const pH = h - pT - pB;
-        
-        // 采样计算 I-V 曲线点 (电压范围 -2V 到 2V)
-        const pts = [];
-        for (let i = 0; i <= 400; i++) {
-            const V = -2 + (4 * i / 400);
-            const iv = current(Na, Nd, ph.n, V, T, ph.m);
-            pts.push({ V, I: iv.disp });
-        }
-        let Imax = 0;
-        pts.forEach(p => Imax = Math.max(Imax, Math.abs(p.I)));
-        Imax = Math.max(Imax, 1e-9) * 1.3;
-        
-        const toX = (v) => pL + ((v + 2) / 4) * pW;
-        const toY = (i) => pT + pH / 2 - (i / Imax) * (pH / 2);
-        
-        // 背景网格
-        ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-        for (let i = 0; i <= 6; i++) {
-            const y = pT + i * pH / 6;
-            ctx.beginPath();
-            ctx.moveTo(pL, y);
-            ctx.lineTo(w - pR, y);
-            ctx.stroke();
-        }
-        for (let i = 0; i <= 5; i++) {
-            const x = pL + i * pW / 5;
-            ctx.beginPath();
-            ctx.moveTo(x, pT);
-            ctx.lineTo(x, h - pB);
-            ctx.stroke();
-        }
-
-        // ========== 添加坐标轴数值标注 ==========
-        // X轴 (电压) 刻度：-2 到 2，每1V一个刻度
-        ctx.fillStyle = '#4b5563';
-        ctx.font = '10px "Segoe UI", "PingFang SC", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-
-        const xTicksIV = [-2, -1, 0, 1, 2];
-        for (let i = 0; i < xTicksIV.length; i++) {
-            const v = xTicksIV[i];
-            const sx = toX(v);
-            ctx.fillText(v + ' V', sx, h - pB + 5);
-        }
-
-         // Y轴 (电流) 刻度：根据 Imax 显示几个关键点（显示相对值，因为纵轴是线性化显示）
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        // 显示 -Imax/2, 0, Imax/2, Imax （但要注意 Imax 可能很小或很大，所以用科学计数法？）
-        // 为了让数值易读，我们显示 -1, -0.5, 0, 0.5, 1（因为 disp 范围基本在 -1~1）
-        const yTicksIV = [-0.5, 0, 0.5, 1];
-        for (let i = 0; i < yTicksIV.length; i++) {
-            const currentVal = yTicksIV[i];
-            const sy = toY(currentVal);
-            // 显示相对值（没有单位，因为 disp 无量纲）
-            let label = currentVal.toFixed(1);
-            if (currentVal === 0) label = '0';
-            ctx.fillText(label, pL - 8, sy);
-        }
-        
-        // 零轴十字线
-        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-        ctx.beginPath();
-        ctx.moveTo(pL, toY(0));
-        ctx.lineTo(w - pR, toY(0));
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(toX(0), pT);
-        ctx.lineTo(toX(0), h - pB);
-        ctx.stroke();
-        
-        // 绘制 I-V 特性曲线
-        ctx.strokeStyle = '#2dd4bf';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        pts.forEach((p, idx) => {
-            const sx = toX(p.V);
-            const sy = toY(p.I);
-            if (idx === 0) ctx.moveTo(sx, sy);
-            else ctx.lineTo(sx, sy);
-        });
-        ctx.stroke();
-        
-        // 标记当前工作点 (亮橙色光晕)
-        const wpi = current(Na, Nd, ph.n, Vapp, T, ph.m);
-        const wpx = toX(Vapp);
-        const wpy = toY(wpi.disp);
-        const glow = ctx.createRadialGradient(wpx, wpy, 0, wpx, wpy, 18);
-        glow.addColorStop(0, 'rgba(57, 197, 187, 0.9)');
-        glow.addColorStop(0.4, 'rgba(80, 220, 190, 0.5)');
-        glow.addColorStop(1, 'rgba(57, 197, 187, 0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(wpx, wpy, 18, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.fillStyle = '#39c5bb';
-        ctx.beginPath();
-        ctx.arc(wpx, wpy, 7, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // ========== 从当前工作点向坐标轴延伸虚线 ==========
-        // 获取真正的坐标轴边界（不是电流为0的线）
-        const xAxisY = h - pB;      // X 轴（电压轴）的实际 Y 坐标（底部）
-        const yAxisX = pL;          // Y 轴（电流轴）的实际 X 坐标（左侧）
-
-        // 向下延伸到 X 轴（底部坐标轴）的虚线
-        ctx.beginPath();
-        ctx.moveTo(wpx, wpy);
-        ctx.lineTo(wpx, xAxisY);
-        ctx.strokeStyle = 'rgba(100, 116, 139, 0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
-        ctx.stroke();
-
-        // 向左延伸到 Y 轴（左侧坐标轴）的虚线
-        ctx.beginPath();
-        ctx.moveTo(wpx, wpy);
-        ctx.lineTo(yAxisX, wpy);
-        ctx.stroke();
-
-        // 恢复实线
-        ctx.setLineDash([]);
-
-        // 在虚线与坐标轴交点添加小圆点
-        ctx.fillStyle = '#64748b';
-        ctx.beginPath();
-        ctx.arc(wpx, xAxisY, 3, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(yAxisX, wpy, 3, 0, 2 * Math.PI);
-        ctx.fill();
-        // 白色边框
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(wpx, xAxisY, 3, 0, 2 * Math.PI);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(yAxisX, wpy, 3, 0, 2 * Math.PI);
-        ctx.stroke();
-
-        // ========== 电压数值标签（X轴下方，紧贴虚线） ==========
-       const voltageLabel = `${Vapp.toFixed(3)} V`;
-       ctx.font = '11px "Segoe UI", "PingFang SC", sans-serif';
-       ctx.textAlign = 'center';
-       ctx.textBaseline = 'top';
-       const vMetrics = ctx.measureText(voltageLabel);
-       const vWidth = vMetrics.width;
-       // 半透明白色背景
-       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-       ctx.fillRect(wpx - vWidth/2 - 4, xAxisY + 2, vWidth + 8, 16);
-       ctx.fillStyle = '#64748b';
-       ctx.fillText(voltageLabel, wpx, xAxisY + 6);
-
-        // ========== 电流数值标签（放在虚线旁边，而不是末端） ==========
-        // 使用 disp（线性化显示值，范围 -1~1）便于阅读
-        let currentVal = wpi.disp;
-        let currentLabel;
-        if (Math.abs(currentVal) < 0.001) {
-            currentLabel = currentVal.toExponential(3);
-        } else if (Math.abs(currentVal) < 0.01) {
-        currentLabel = currentVal.toFixed(5);
-        } else {
-        currentLabel = currentVal.toFixed(4);
-        }
-        currentLabel = `I = ${currentLabel} A`;
-
-        // 计算标签位置：放在水平虚线的中间偏左位置（避免出框）
-        ctx.font = '11px "Segoe UI", "PingFang SC", sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        const iMetrics = ctx.measureText(currentLabel);
-        const iWidth = iMetrics.width;
-
-        // 标签放在虚线左侧约 8px 处，如果太靠左则放在虚线右侧
-        let labelX = wpx - 42;  // 虚线左侧 12px
-        let textAlign = 'right';
-
-        // 如果左侧空间不够（太靠左边界），就放在虚线右侧
-        if (labelX - iWidth < pL + 10) {
-        labelX = wpx + 42;
-        textAlign = 'left';
-        }
-
-        ctx.textAlign = textAlign;
-        // 标签位置与虚线高度对齐（不一定要到 Y 轴）
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        if (textAlign === 'right') {
-        ctx.fillRect(labelX - iWidth - 4, wpy - 8, iWidth + 8, 16);
-        ctx.fillStyle = '#64748b';
-        ctx.fillText(currentLabel, labelX - 4, wpy);
-        } else {
-        ctx.fillRect(labelX, wpy - 8, iWidth + 8, 16);
-        ctx.fillStyle = '#64748b';
-        ctx.fillText(currentLabel, labelX + 4, wpy);
-        }
-
-        // 画一条小连接线指向虚线
-        ctx.beginPath();
-        if (textAlign === 'right') {
-            ctx.moveTo(labelX - iWidth - 4, wpy);
-            ctx.lineTo(labelX - iWidth - 12, wpy);
-        } else {
-        ctx.moveTo(labelX + iWidth + 4, wpy);
-        ctx.lineTo(labelX + iWidth + 12, wpy);
-        }
-        ctx.strokeStyle = '#64748b';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        
-        // 轴标签
-        ctx.fillStyle = '#4b5563';
-        ctx.font = 'bold 13px "Segoe UI","PingFang SC",sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('电压 V [V]', w / 2, h - 30);
-        ctx.save();
-        ctx.translate(14, pT + pH / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText('电流 I [A]', 0, 0);
-        ctx.restore();
-    }
-
-        // ========== 鼠标悬停显示坐标（IV曲线图） ==========
-        function initIVCoordinates() {
-            const canvas = ivCvs;
-            let tooltip = null;
-            
-            // 创建提示框
-            function getTooltip() {
-                if (!tooltip) {
-                    tooltip = document.createElement('div');
-                    tooltip.className = 'coords-tooltip';
-                    tooltip.style.opacity = '0';
-                    document.body.appendChild(tooltip);
-                }
-                return tooltip;
-            }
-            
-            // 获取当前 IV 曲线的参数
-            function getIVParams() {
-                const ph = physics();
-                const Imax = 1.3;  // 显示范围大约 -1.3 到 1.3
-                const toX = (v) => 70 + ((v + 2) / 4) * (canvas.width - 70 - 35);
-                const toY = (i) => 40 + 300 / 2 - (i / Imax) * (300 / 2);
-                return { toX, toY, Imax };
-            }
-            
-            canvas.addEventListener('mousemove', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                
-                const mouseX = (e.clientX - rect.left) * scaleX;
-                const mouseY = (e.clientY - rect.top) * scaleY;
-                
-                // 画布坐标转换到数据坐标
-                const pL = 70, pR = 35, pT = 40, pB = 100;
-                const pW = canvas.width - pL - pR;
-                const pH = canvas.height - pT - pB;
-                
-                // 检查是否在绘图区域内
-                if (mouseX >= pL && mouseX <= pL + pW && mouseY >= pT && mouseY <= pT + pH) {
-                    // 电压值（X轴）
-                    const V = -2 + (mouseX - pL) / pW * 4;
-                    // 电流显示值（Y轴）- 反向映射
-                    const disp = ((pT + pH - mouseY) / pH) * 2.6 - 1.3;  // 范围 -1.3 到 1.3
-                    
-                    // 计算真实电流值（通过 current 函数获取）
-                    const ph = physics();
-                    let realI = 0;
-                    try {
-                        const iv = current(Na, Nd, ph.n, V, T, ph.m);
-                        realI = iv.I;
-                    } catch(e) { realI = 0; }
-                    
-                    // 格式化显示
-                    let realStr;
-                    if (Math.abs(realI) < 1e-12) realStr = realI.toExponential(3);
-                    else if (Math.abs(realI) < 1e-9) realStr = (realI * 1e9).toFixed(2) + 'n';
-                    else if (Math.abs(realI) < 1e-6) realStr = (realI * 1e6).toFixed(2) + 'μ';
-                    else if (Math.abs(realI) < 1e-3) realStr = (realI * 1e3).toFixed(2) + 'm';
-                    else realStr = realI.toFixed(4);
-                    
-                    const tooltip = getTooltip();
-                    tooltip.innerHTML = `V = ${V.toFixed(3)} V | I = ${realStr} A | I_disp = ${disp.toFixed(4)}`;
-                    tooltip.style.left = (e.clientX + 15) + 'px';
-                    tooltip.style.top = (e.clientY - 25) + 'px';
-                    tooltip.style.opacity = '1';
-                } else {
-                    const tooltip = getTooltip();
-                    tooltip.style.opacity = '0';
-                }
-            });
-            
-            canvas.addEventListener('mouseleave', () => {
-                const tooltip = getTooltip();
-                tooltip.style.opacity = '0';
-            });
-        }
-        
-        // 在页面加载后初始化
-        setTimeout(initIVCoordinates, 500);
-    
-    // ======================= 8. UI 更新函数 (同步滑动条显示值) =======================
-    function updateUI() {
-        document.getElementById('tempDisp').textContent = T + ' K';
-        
-        // 浓度科学计数法格式化显示
-        const fmtConc = (val) => {
-            if (val >= 1e18) return (val / 1e18).toFixed(2) + '×10¹⁸';
-            if (val >= 1e17) return (val / 1e17).toFixed(2) + '×10¹⁷';
-            if (val >= 1e16) return (val / 1e16).toFixed(2) + '×10¹⁶';
-            if (val >= 1e15) return (val / 1e15).toFixed(2) + '×10¹⁵';
-            return (val / 1e14).toFixed(2) + '×10¹⁴';
-        };
-        document.getElementById('naDisp').textContent = fmtConc(Na) + ' cm⁻³';
-        document.getElementById('ndDisp').textContent = fmtConc(Nd) + ' cm⁻³';
-        document.getElementById('voltDisp').textContent = Vapp.toFixed(2) + ' V';
-        document.getElementById('voltSlider').value = Vapp;
-    }
-
-            // 更新数据卡片
-        function updateDataCard(ph) {
-            // 耗尽层宽度
-            const W = ph.dp.W;
-            document.getElementById('depletionWidth').textContent = W.toFixed(4);
-            
-            // 内建电势
-            const Vbi = ph.vb;
-            document.getElementById('builtinVoltage').textContent = Vbi.toFixed(4);
-            
-            // 电流（真实值，可能极小或极大，使用科学计数法）
-            const I = ph.iv.I;
-            let currentStr;
-            if (Math.abs(I) < 1e-12) {
-                currentStr = I.toExponential(3);
-            } else if (Math.abs(I) < 1e-9) {
-                currentStr = I.toExponential(4);
-            } else if (Math.abs(I) < 1e-6) {
-                currentStr = (I * 1e9).toFixed(3) + ' n';
-            } else if (Math.abs(I) < 1e-3) {
-                currentStr = (I * 1e6).toFixed(3) + ' μ';
-            } else if (Math.abs(I) < 1) {
-                currentStr = (I * 1e3).toFixed(3) + ' m';
-            } else {
-                currentStr = I.toFixed(4);
-            }
-            // 添加 A 单位
-            if (currentStr.includes('n') || currentStr.includes('μ') || currentStr.includes('m')) {
-                document.getElementById('currentValue').innerHTML = currentStr.replace(/[nμm]/, match => `<span style="font-size:0.75rem;">${match}</span>`) + 'A';
-            } else {
-                document.getElementById('currentValue').textContent = currentStr + ' A';
-            }
-            
-            // 载流子浓度
-            const ni = ph.n;
-            const Na_ = Na, Nd_ = Nd;
-            // P区空穴浓度 ≈ Na (多数载流子)
-            const holeP = Na_;
-            // N区电子浓度 ≈ Nd
-            const electronN = Nd_;
-            // 本征浓度
-            const intrinsic = ni;
-            
-            // 格式化科学计数法
-            function formatConc(val) {
-                if (val >= 1e18) return (val / 1e18).toFixed(2) + '×10¹⁸';
-                if (val >= 1e17) return (val / 1e17).toFixed(2) + '×10¹⁷';
-                if (val >= 1e16) return (val / 1e16).toFixed(2) + '×10¹⁶';
-                if (val >= 1e15) return (val / 1e15).toFixed(2) + '×10¹⁵';
-                if (val >= 1e14) return (val / 1e14).toFixed(2) + '×10¹⁴';
-                if (val >= 1e12) return (val / 1e12).toFixed(2) + '×10¹²';
-                if (val >= 1e10) return (val / 1e10).toFixed(2) + '×10¹⁰';
-                return val.toExponential(2);
-            }
-            
-            document.getElementById('holeConcP').innerHTML = formatConc(holeP) + ' <span style="font-size:0.7rem;"></span>';
-            document.getElementById('electronConcN').innerHTML = formatConc(electronN) + ' <span style="font-size:0.7rem;"></span>';
-            document.getElementById('intrinsicConc').textContent = formatConc(intrinsic);
-            
-                    // 少数载流子浓度
-            // P区少数载流子（电子浓度）= ni² / Na
-            // N区少数载流子（空穴浓度）= ni² / Nd
-            const pMinority = (ni * ni) / Na;
-            const nMinority = (ni * ni) / Nd;
-            
-            // 格式化函数
-            function formatMinority(val) {
-                if (val >= 1e10) return (val / 1e10).toFixed(2) + '×10¹⁰';
-                if (val >= 1e8) return (val / 1e8).toFixed(2) + '×10⁸';
-                if (val >= 1e6) return (val / 1e6).toFixed(2) + '×10⁶';
-                if (val >= 1e4) return (val / 1e4).toFixed(2) + '×10⁴';
-                return val.toExponential(2);
-            }
-            
-            // 更新少数载流子显示（如果存在对应元素）
-            const pMinorityEl = document.getElementById('pMinority');
-            const nMinorityEl = document.getElementById('nMinority');
-            if (pMinorityEl) {
-                pMinorityEl.innerHTML = formatMinority(pMinority) + ' <span style="font-size:0.7rem;">(电子)</span>';
-            }
-            if (nMinorityEl) {
-                nMinorityEl.innerHTML = formatMinority(nMinority) + ' <span style="font-size:0.7rem;">(空穴)</span>';
-            }
-            
-            // 偏置状态显示
-            let biasType = '';
-            let biasClass = '';
-            if (Vapp > 0.02) {
-                biasType = '正向偏置 ▲';
-                biasClass = 'bias-forward';
-            } else if (Vapp < -0.02) {
-                biasType = '反向偏置 ▼';
-                biasClass = 'bias-reverse';
-            } else {
-                biasType = '零偏置 ●';
-                biasClass = 'bias-zero';
-            }
-            const biasSpan = document.getElementById('biasType');
-            biasSpan.innerHTML = `<span class="badge-bias ${biasClass}">${biasType}</span>`;
-            biasSpan.style.background = 'none';
-            biasSpan.style.paddingLeft = '0';
-        }
-    
-    // 调整动画速度，并切换按钮高亮样式
-    function setSpeed(s, btn) {
-        spd = s;
-        ['btn05', 'btn1', 'btn2'].forEach((id, idx) => {
-            const el = document.getElementById(id);
-            if (el) el.classList.toggle('active', (s === 0.5 && idx === 0) || (s === 1 && idx === 1) || (s === 2 && idx === 2));
-        });
-    }
-
-    // ========== 导出 CSV 数据 ==========
-    function exportIVData() {
-        // 计算当前 IV 曲线数据点（电压范围 -2V 到 2V，步长 0.01V）
-        const ph = physics();
-        const pts = [];
-        for (let v = -2; v <= 2; v += 0.01) {
-            const iv = current(Na, Nd, ph.n, v, T, ph.m);
-            pts.push({ V: v, I: iv.I, I_disp: iv.disp });
-        }
-            
-        // 构建 CSV 内容
-        let csv = "电压 (V),电流 (A),电流_显示值 (disp)\n";
-        for (const p of pts) {
-            csv += `${p.V},${p.I},${p.I_disp}\n`;
-        }
-        
-        // 添加参数信息作为注释
-        const m = mats[mat];
-        const info = `# 材料: ${mat === 'Si' ? '硅' : mat === 'Ge' ? '锗' : '砷化镓'}, 温度: ${T}K, Na: ${Na} cm⁻³, Nd: ${Nd} cm⁻³\n`;
-        csv = info + csv;
-        
-        // 下载文件
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const date = new Date();
-        const filename = `PN_junction_${mat}_${T}K_${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.csv`;
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-            
-        // 短暂提示
-        showToast('📊 IV 数据已导出！');
-        }
-        
-        // ========== 截图保存功能 ==========
-        function exportScreenshot() {
-            // 创建临时画布合并两个图表
-            const bandCanvas = document.getElementById('bandCvs');
-            const ivCanvas = document.getElementById('ivCvs');
-            
-            // 创建一个新画布，尺寸为两个画布的总宽度
-            const tempCanvas = document.createElement('canvas');
-            const bandRect = bandCanvas.parentElement.getBoundingClientRect();
-            const ivRect = ivCanvas.parentElement.getBoundingClientRect();
-            const width = bandRect.width + ivRect.width + 20; // 加间距
-            const height = Math.max(bandRect.height, ivRect.height);
-            
-            tempCanvas.width = width;
-            tempCanvas.height = height;
-            const tempCtx = tempCanvas.getContext('2d');
-            
-            // 白色背景
-            tempCtx.fillStyle = '#fff';
-            tempCtx.fillRect(0, 0, width, height);
-            
-            // 绘制两个画布内容
-            tempCtx.drawImage(bandCanvas, 0, 0, bandRect.width, bandRect.height);
-            tempCtx.drawImage(ivCanvas, bandRect.width + 20, 0, ivRect.width, ivRect.height);
-            
-            // 添加文字标注
-            tempCtx.font = '12px "Segoe UI"';
-            tempCtx.fillStyle = '#666';
-            tempCtx.fillText('能带图 & 载流子动画', 10, 20);
-            tempCtx.fillText('I-V 特性曲线', bandRect.width + 25, 20);
-            
-            // 下载截图
-            const link = document.createElement('a');
-            const date = new Date();
-            link.download = `PN_junction_screenshot_${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}.png`;
-            link.href = tempCanvas.toDataURL();
-            link.click();
-            
-            showToast('📸 截图已保存！');
-        }
-        
-        // ========== 提示消息 ==========
-        function showToast(msg) {
-            let toast = document.getElementById('toastMsg');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'toastMsg';
-                toast.style.cssText = `
-                    position: fixed;
-                    bottom: 30px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: #39c5bb;
-                    color: white;
-                    padding: 8px 20px;
-                    border-radius: 30px;
-                    font-size: 0.85rem;
-                    font-weight: 500;
-                    z-index: 1000;
-                    opacity: 0;
-                    transition: opacity 0.3s ease;
-                    pointer-events: none;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                `;
-                document.body.appendChild(toast);
-            }
-            toast.textContent = msg;
-            toast.style.opacity = '1';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-            }, 2000);
-        }
-        
-        // ========== 参数预设 ==========
-        function applyPreset(preset) {
-            switch(preset) {
-                case 'Si':
-                    mat = 'Si';
-                    T = 300;
-                    Na = 1e16;
-                    Nd = 1e16;
-                    break;
-                case 'Ge':
-                    mat = 'Ge';
-                    T = 300;
-                    Na = 1e16;
-                    Nd = 1e16;
-                    break;
-                case 'GaAs':
-                    mat = 'GaAs';
-                    T = 300;
-                    Na = 1e16;
-                    Nd = 1e16;
-                    break;
-                case 'heavyN':
-                    mat = 'Si';
-                    T = 300;
-                    Na = 1e15;
-                    Nd = 1e18;
-                    break;
-                case 'heavyP':
-                    mat = 'Si';
-                    T = 300;
-                    Na = 1e18;
-                    Nd = 1e15;
-                    break;
-                case 'highTemp':
-                    mat = 'Si';
-                    T = 400;
-                    Na = 1e16;
-                    Nd = 1e16;
-                    break;
-                case 'lowTemp':
-                    mat = 'Si';
-                    T = 250;
-                    Na = 1e16;
-                    Nd = 1e16;
-                    break;
-                default: return;
-            }
-            
-            // 重置电压和相关状态
-            Vapp = 0;
-            parts = [];
-            
-            // 更新 UI 控件
-            document.getElementById('matSel').value = mat;
-            document.getElementById('tempSlider').value = T;
-            document.getElementById('naSlider').value = Math.log10(Na);
-            document.getElementById('ndSlider').value = Math.log10(Nd);
-            document.getElementById('voltSlider').value = 0;
-            
-            // 触发 UI 更新
-            document.getElementById('tempDisp').textContent = T + ' K';
-            updateUI();
-            
-            showToast(`✅ 已切换到 ${preset} 预设`);
-        }
-        
-        // 绑定预设按钮事件
-        setTimeout(() => {
-            const btns = {
-                presetSi: () => applyPreset('Si'),
-                presetGe: () => applyPreset('Ge'),
-                presetGaAs: () => applyPreset('GaAs'),
-                presetHeavyN: () => applyPreset('heavyN'),
-                presetHeavyP: () => applyPreset('heavyP'),
-                presetHighTemp: () => applyPreset('highTemp'),
-                presetLowTemp: () => applyPreset('lowTemp'),
-                exportBtn: () => exportIVData(),
-                exportScreenshotBtn: () => exportScreenshot()
+        function initUI() {
+            const listen = (id, prop, isFloat, cb) => {
+                document.getElementById(id).addEventListener('input', e => {
+                    state[prop] = isFloat ? parseFloat(e.target.value) : e.target.value;
+                    if(cb) cb(e.target.value);
+                });
             };
-            
-            for (const [id, handler] of Object.entries(btns)) {
-                const btn = document.getElementById(id);
-                if (btn) btn.onclick = handler;
-            }
-        }, 100);
-    
-    // ======================= 9. 构建控制面板并绑定事件 (动态生成控件) =======================
-    document.getElementById('controls').innerHTML = `
-        <div class="ctrl"><label>🧪 材料</label><select id="matSel"><option value="Si">Si (硅) 1.12eV</option><option value="Ge">Ge (锗) 0.67eV</option><option value="GaAs">GaAs 1.42eV</option></select></div>
-        <div class="ctrl"><label>🌡️ 温度: <span id="tempDisp">300 K</span></label><input type="range" id="tempSlider" min="250" max="400" value="300" step="1"><div class="range-labels"><span>250K</span><span>300K</span><span>350K</span><span>400K</span></div></div>
-        <div class="ctrl"><label>🔴 P区 Na: <span id="naDisp">1×10¹⁶ cm⁻³</span></label><input type="range" id="naSlider" min="14" max="18" value="16" step="0.05"><div class="range-labels"><span>10¹⁴</span><span>10¹⁵</span><span>10¹⁶</span><span>10¹⁷</span><span>10¹⁸</span></div></div>
-        <div class="ctrl"><label>🔵 N区 Nd: <span id="ndDisp">1×10¹⁶ cm⁻³</span></label><input type="range" id="ndSlider" min="14" max="18" value="16" step="0.05"><div class="range-labels"><span>10¹⁴</span><span>10¹⁵</span><span>10¹⁶</span><span>10¹⁷</span><span>10¹⁸</span></div></div>
-        <div class="ctrl"><label>⚡ 电压: <span id="voltDisp">0.00 V</span></label><input type="range" id="voltSlider" min="-2" max="2" value="0" step="0.005"><div class="range-labels"><span>-2V</span><span>-1V</span><span>0V</span><span>+1V</span><span>+2V</span></div></div>
-        <div class="ctrl"><label>⏩ 动画速度</label><div class="btn-row"><button class="btn" id="btn05">0.5×</button><button class="btn active" id="btn1">1×</button><button class="btn" id="btn2">2×</button></div></div>
-    `;
-    
-    // 绑定控件事件监听
-    document.getElementById('matSel').onchange = function() { mat = this.value; parts = []; };
-    document.getElementById('tempSlider').oninput = function() { T = +this.value; parts = []; };
-    document.getElementById('naSlider').oninput = function() { Na = Math.pow(10, +this.value); parts = []; };
-    document.getElementById('ndSlider').oninput = function() { Nd = Math.pow(10, +this.value); parts = []; };
-    document.getElementById('voltSlider').oninput = function() { Vapp = +this.value; };
-    document.getElementById('btn05').onclick = () => setSpeed(0.5, document.getElementById('btn05'));
-    document.getElementById('btn1').onclick  = () => setSpeed(1,   document.getElementById('btn1'));
-    document.getElementById('btn2').onclick  = () => setSpeed(2,   document.getElementById('btn2'));
-    
-    // 键盘快捷键: 左右箭头调节电压, R 重置所有参数
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            Vapp = Math.max(-2, Vapp - 0.05);
-            document.getElementById('voltSlider').value = Vapp;
-        } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            Vapp = Math.min(2, Vapp + 0.05);
-            document.getElementById('voltSlider').value = Vapp;
-        } else if (e.key === 'r' || e.key === 'R') {
-            e.preventDefault();
-            Vapp = 0; T = 300; Na = 1e16; Nd = 1e16; mat = 'Si'; parts = [];
-            document.getElementById('matSel').value = 'Si';
-            document.getElementById('tempSlider').value = 300;
-            document.getElementById('naSlider').value = 16;
-            document.getElementById('ndSlider').value = 16;
-            document.getElementById('voltSlider').value = 0;
-            setSpeed(1, document.getElementById('btn1'));
-        }
-    });
-    
-    // 初始化控件默认值
-    document.getElementById('matSel').value = 'Si';
-    document.getElementById('tempSlider').value = 300;
-    document.getElementById('naSlider').value = 16;
-    document.getElementById('ndSlider').value = 16;
-    document.getElementById('voltSlider').value = 0;
-    let phCache = physics();
-    updateUI();
 
-        // 平滑过渡动画相关变量
-        let smoothVapp = 0;
-        let targetVapp = 0;
-        
-        // ======================= 10. 动画主循环 (requestAnimationFrame) =======================
-        let last = performance.now();
-        function render(now) {
-            let dt = (now - last) / 1000;
-            if (dt <= 0) dt = 0.016;
-            if (dt > 0.2) dt = 0.2;
-            last = now;
-            
-            // 平滑过渡：targetVapp 跟随真实 Vapp，smoothVapp 缓慢趋近
-            targetVapp = Vapp;
-            const smoothing = 0.15;  // 平滑系数，越小越平滑
-            smoothVapp = smoothVapp + (targetVapp - smoothVapp) * smoothing;
-            
-            // 使用平滑后的电压值计算物理状态
-            const realVapp = Vapp;
-            const displayVapp = smoothVapp;
-            
-            // 临时设置 Vapp 为平滑值用于绘图
-            Vapp = displayVapp;
-            
-            const ph = physics();
-            phCache = ph;
-            
-            // 绘图使用平滑后的物理状态
-            spawn(dt);
-            drawBand(ph);
-            drawIV(ph);
-            
-            // 恢复真实电压值用于 UI 显示
-            Vapp = realVapp;
-            updateDataCard(ph);
-            updateUI();
-            
-            requestAnimationFrame(render);
+            listen('mat1', 'mat1', false, () => { updateBadge(); resetProcess(); });
+            listen('mat2', 'mat2', false, () => { updateBadge(); resetProcess(); });
+            listen('type1', 'type1', false, () => { updateBadge(); resetProcess(); });
+            listen('type2', 'type2', false, () => { updateBadge(); resetProcess(); });
+
+            listen('range-na', 'N1', true, v => {
+                state.N1 = Math.pow(10, v);
+                document.getElementById('lbl-na').innerText = state.N1.toExponential(1) + ' cm⁻³';
+            });
+            listen('range-nd', 'N2', true, v => {
+                state.N2 = Math.pow(10, v);
+                document.getElementById('lbl-nd').innerText = state.N2.toExponential(1) + ' cm⁻³';
+            });
+            listen('range-temp', 'temp', true, v => {
+                document.getElementById('lbl-temp').innerText = v + ' K';
+            });
+            listen('range-stage', 'stage', true, v => {
+                document.getElementById('lbl-stage').innerText = Math.round(v*100) + '%';
+                if(v < 1.0) {
+                    state.bias = 0;
+                    document.getElementById('range-bias').value = 0;
+                    document.getElementById('lbl-bias').innerText = '0.00 V';
+                }
+            });
+            listen('range-bias', 'bias', true, v => {
+                if(state.stage < 1.0) {
+                    state.stage = 1.0;
+                    document.getElementById('range-stage').value = 1.0;
+                    document.getElementById('lbl-stage').innerText = '100%';
+                }
+                document.getElementById('lbl-bias').innerText = parseFloat(v).toFixed(2) + ' V';
+            });
+
+            const speeds = {'sp-05': 0.5, 'sp-10': 1.0, 'sp-20': 2.0};
+            Object.keys(speeds).forEach(id => {
+                document.getElementById(id).addEventListener('click', e => {
+                    document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.speed = speeds[id];
+                });
+            });
         }
-    requestAnimationFrame(render);
-})();
-</script>
+
+        function resetProcess() {
+            state.stage = 0; state.bias = 0;
+            document.getElementById('range-stage').value = 0;
+            document.getElementById('lbl-stage').innerText = '0%';
+            document.getElementById('range-bias').value = 0;
+            document.getElementById('lbl-bias').innerText = '0.00 V';
+        }
+
+        function updateBadge() {
+            let b = document.getElementById('junction-badge');
+            let t2 = state.type2 === 'p' ? 'P' : 'N';
+            b.innerText = `当前形成：${state.type1}${t2} 结`;
+        }
+
+        function calcPhysics() {
+            let p1 = mats[state.mat1];
+            let p2 = mats[state.mat2];
+            let Vt = (k * state.temp) / q;
+
+            let vBuffer = 0.25;
+            let ef1_vac = (state.type1 === 'n') 
+                ? p1.chi + vBuffer + Vt*Math.log(p1.nc/state.N1)*0.3 
+                : p1.chi + p1.eg - vBuffer - Vt*Math.log(p1.nv/state.N1)*0.3;
+            let ef2_vac = (state.type2 === 'n') 
+                ? p2.chi + vBuffer + Vt*Math.log(p2.nc/state.N2)*0.3 
+                : p2.chi + p2.eg - vBuffer - Vt*Math.log(p2.nv/state.N2)*0.3;
+
+            let Vd = ef1_vac - ef2_vac; 
+            let V_total = Vd - state.bias;
+            let V_total_abs = Math.abs(V_total);
+
+            let eps1 = p1.eps * eps0, eps2 = p2.eps * eps0;
+            let n1_m = state.N1 * 1e6, n2_m = state.N2 * 1e6;
+            
+            let V1 = V_total_abs * (eps2 * n2_m) / (eps1 * n1_m + eps2 * n2_m);
+            let V2 = V_total_abs * (eps1 * n1_m) / (eps1 * n1_m + eps2 * n2_m);
+
+            let x1 = Math.sqrt((2 * eps1 * V1) / (q * n1_m)) * 1e9;
+            let x2 = Math.sqrt((2 * eps2 * V2) / (q * n2_m)) * 1e9;
+            let W = x1 + x2;
+
+            document.getElementById('m-eg1').innerText = p1.eg.toFixed(2) + ' eV';
+            document.getElementById('m-eg2').innerText = p2.eg.toFixed(2) + ' eV';
+            document.getElementById('m-chi1').innerText = p1.chi.toFixed(2) + ' eV';
+            document.getElementById('m-chi2').innerText = p2.chi.toFixed(2) + ' eV';
+            document.getElementById('m-vd').innerText = Math.abs(Vd).toFixed(3) + ' V';
+            document.getElementById('m-w').innerText = (W * state.stage).toFixed(1) + ' nm';
+
+            return { ef1_vac, ef2_vac, Vd, V1, V2, x1, x2, W };
+        }
+
+        function initParticles() {
+            particles = [];
+            for(let i=0; i<140; i++) {
+                let left = Math.random() < 0.5;
+                particles.push({
+                    left: left,
+                    type: left ? (state.type1 === 'p'?'h':'e') : (state.type2 === 'p'?'h':'e'),
+                    x_rel: Math.random(),
+                    y_fuzz: Math.random() * 20 - 10,
+                    vx: (Math.random() * 0.008 + 0.004)
+                });
+            }
+        }
+
+        function drawBand(p) {
+            const dpr = window.devicePixelRatio || 1;
+            ctxBand.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctxBand.clearRect(0, 0, cBand.width/dpr, cBand.height/dpr);
+
+            const w = cBand.width / dpr;
+            const h = cBand.height / dpr;
+            const midX = w / 2;
+
+            let banner = document.getElementById('stage-banner');
+            if(state.stage === 0) {
+                banner.innerText = "第一步: 独立状态（左右侧真空能级对齐呈一条水平直线）";
+                banner.style.borderColor = "#94a3b8";
+            } else if(state.stage < 1) {
+                banner.innerText = "第二步: 平滑接触过渡（费米能级向中间靠拢对齐，真空能级保持平滑连续弯曲）";
+                banner.style.borderColor = "#f59e0b";
+            } else {
+                if(state.bias > 0.05) banner.innerText = "动态仿真 [正向偏置]: 势垒降低，费米能级发生非平衡拆分，多子跨越结区大量扩散";
+                else if(state.bias < -0.05) banner.innerText = "动态仿真 [反向偏置]: 势垒区加宽，阻挡扩散，仅存在极微少少子漂移";
+                else banner.innerText = "第三步: 热平衡建立（费米能级100%对齐呈完美直线，带边形成平滑弯曲与完美的不连续断崖）";
+                banner.style.borderColor = "#34d399";
+            }
+
+            const evScale = 115;          
+            const vacCompress = 3.3;     
+
+            let p1 = mats[state.mat1];
+            let p2 = mats[state.mat2];
+
+            let midY_left = p1.chi + p1.eg / 2;
+            let midY_right = state.stage * (p.Vd - state.bias) + p2.chi + p2.eg / 2;
+            let globalMidEV = (midY_left + midY_right) / 2;
+
+            const zeroVacY = (h * 0.53) - (globalMidEV - vacCompress) * evScale;
+
+            let dw1 = 0, dw2 = 0;
+            let W_nm = p.x1 + p.x2;
+            if(W_nm > 0) {
+                let total_visual_w = 140; 
+                dw1 = total_visual_w * (p.x1 / W_nm) * state.stage;
+                dw2 = total_visual_w * (p.x2 / W_nm) * state.stage;
+            }
+
+            let ly_vac = zeroVacY;
+            let ly_ef  = zeroVacY + (p.ef1_vac - vacCompress) * evScale;
+
+            let ry_vac = zeroVacY + (p.Vd - state.bias) * evScale * state.stage;
+            let ry_ef  = ry_vac + (p.ef2_vac - vacCompress) * evScale;
+
+            let sign = Math.sign(p.Vd - state.bias);
+
+            function getE0(x) {
+                if(x < midX) {
+                    if(x < midX - dw1) return ly_vac;
+                    let t = (x - (midX - dw1)) / (dw1 || 1); 
+                    return ly_vac + sign * p.V1 * evScale * state.stage * t * t;
+                } else {
+                    if(x > midX + dw2) return ry_vac;
+                    let t = ((midX + dw2) - x) / (dw2 || 1); 
+                    return ry_vac - sign * p.V2 * evScale * state.stage * t * t;
+                }
+            }
+
+            // 1. 绘制真空能级
+            ctxBand.lineWidth = 2.5;
+            ctxBand.strokeStyle = '#ffffff';
+            ctxBand.beginPath();
+            for(let x=0; x<w; x+=2) {
+                let y = getE0(x);
+                if(x===0) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y);
+            }
+            ctxBand.stroke();
+
+            // 2. 绘制费米能级
+            ctxBand.lineWidth = 1.5;
+            ctxBand.strokeStyle = '#3b82f6';
+            ctxBand.setLineDash([5, 3]);
+            ctxBand.beginPath(); ctxBand.moveTo(0, ly_ef); ctxBand.lineTo(midX, ly_ef); ctxBand.stroke();
+            ctxBand.beginPath(); ctxBand.moveTo(midX, ry_ef); ctxBand.lineTo(w, ry_ef); ctxBand.stroke();
+            ctxBand.setLineDash([]);
+
+            // 3. 绘制导带和价带曲线（取消强制连接，保留真实的断崖式不连续）
+            ctxBand.lineWidth = 3.5;
+            
+            // 左侧弯曲
+            ctxBand.strokeStyle = '#ef4444'; ctxBand.beginPath();
+            for(let x=0; x<=midX; x+=2) { let y = getE0(x) + (p1.chi - vacCompress) * evScale; if(x===0) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
+            ctxBand.stroke();
+
+            ctxBand.strokeStyle = '#10b981'; ctxBand.beginPath();
+            for(let x=0; x<=midX; x+=2) { let y = getE0(x) + (p1.chi + p1.eg - vacCompress) * evScale; if(x===0) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
+            ctxBand.stroke();
+
+            // 右侧弯曲
+            ctxBand.strokeStyle = '#ef4444'; ctxBand.beginPath();
+            for(let x=midX; x<w; x+=2) { let y = getE0(x) + (p2.chi - vacCompress) * evScale; if(x===midX) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
+            ctxBand.stroke();
+
+            ctxBand.strokeStyle = '#10b981'; ctxBand.beginPath();
+            for(let x=midX; x<w; x+=2) { let y = getE0(x) + (p2.chi + p2.eg - vacCompress) * evScale; if(x===midX) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
+            ctxBand.stroke();
+
+            // 4. 边界辅助虚线（严格使用虚线，避免产生“上下连通”的错觉）
+            if(state.stage > 0.05) {
+                ctxBand.lineWidth = 1;
+                ctxBand.strokeStyle = 'rgba(255,255,255,0.12)';
+                ctxBand.setLineDash([3, 3]);
+                ctxBand.beginPath(); ctxBand.moveTo(midX-dw1, 0); ctxBand.lineTo(midX-dw1, h); ctxBand.stroke();
+                ctxBand.beginPath(); ctxBand.moveTo(midX+dw2, 0); ctxBand.lineTo(midX+dw2, h); ctxBand.stroke();
+                
+                // 异质结界面线调整为明显的细虚点线
+                ctxBand.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctxBand.setLineDash([6, 6]);
+                ctxBand.beginPath(); ctxBand.moveTo(midX, 0); ctxBand.lineTo(midX, h); ctxBand.stroke();
+                ctxBand.setLineDash([]);
+            }
+
+            // 5. 粒子渲染
+            particles.forEach(pt => {
+                let drive = 0;
+                if(state.stage >= 0.98) {
+                    drive = state.bias * 0.35; 
+                    if(state.bias < 0) drive = state.bias * 0.02; 
+                }
+
+                if(pt.type === 'e') pt.x_rel += (pt.vx + drive * 0.006) * state.speed;
+                else pt.x_rel -= (pt.vx + drive * 0.006) * state.speed;
+
+                if(pt.x_rel > 1) pt.x_rel = 0;
+                if(pt.x_rel < 0) pt.x_rel = 1;
+
+                let px = pt.left ? pt.x_rel * midX : midX + pt.x_rel * (w - midX);
+                if(px < 2) px = 2; if(px > w-2) px = w-2;
+
+                let vac_y = getE0(px);
+                let py = 0;
+
+                if(pt.left) {
+                    py = (pt.type === 'e') ? vac_y + (p1.chi - vacCompress) * evScale - 7 + pt.y_fuzz * 0.2 : vac_y + (p1.chi + p1.eg - vacCompress) * evScale + 9 + pt.y_fuzz * 0.2;
+                } else {
+                    py = (pt.type === 'e') ? vac_y + (p2.chi - vacCompress) * evScale - 7 + pt.y_fuzz * 0.2 : vac_y + (p2.chi + p2.eg - vacCompress) * evScale + 9 + pt.y_fuzz * 0.2;
+                }
+
+                ctxBand.fillStyle = (pt.type === 'e') ? '#60a5fa' : '#f43f5e';
+                ctxBand.shadowBlur = 4;
+                ctxBand.shadowColor = ctxBand.fillStyle;
+                ctxBand.beginPath(); ctxBand.arc(px, py, 3.5, 0, Math.PI*2); ctxBand.fill();
+                ctxBand.shadowBlur = 0;
+            });
+
+            ctxBand.fillStyle = '#ffffff'; ctxBand.fillText("真空能级 E₀", 10, ly_vac - 6);
+            ctxBand.fillStyle = '#ef4444'; ctxBand.fillText("导带 E_c", 10, ly_vac + (p1.chi - vacCompress)*evScale - 6);
+            ctxBand.fillStyle = '#3b82f6'; ctxBand.fillText("费米能级 E_f", 10, ly_ef - 6);
+            ctxBand.fillStyle = '#10b981'; ctxBand.fillText("价带 E_v", 10, ly_vac + (p1.chi+p1.eg - vacCompress)*evScale + 14);
+        }
+
+        function drawCharge(p) {
+            const dpr = window.devicePixelRatio || 1;
+            ctxCharge.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctxCharge.clearRect(0, 0, cCharge.width/dpr, cCharge.height/dpr);
+
+            const w = cCharge.width / dpr;
+            const h = cCharge.height / dpr;
+            const midX = w / 2;
+            const zeroY = h / 2;
+
+            ctxCharge.strokeStyle = '#243552';
+            ctxCharge.beginPath(); ctxCharge.moveTo(0, zeroY); ctxCharge.lineTo(w, zeroY); ctxCharge.stroke();
+            ctxCharge.beginPath(); ctxCharge.moveTo(midX, 0); ctxCharge.lineTo(midX, h); ctxCharge.stroke();
+
+            if(state.stage < 0.05) return;
+
+            let dw1 = 0, dw2 = 0;
+            let W_nm = p.x1 + p.x2;
+            if(W_nm > 0) {
+                let total_visual_w = 140;
+                dw1 = total_visual_w * (p.x1 / W_nm) * state.stage;
+                dw2 = total_visual_w * (p.x2 / W_nm) * state.stage;
+            }
+
+            let sign = (p.Vd > 0) ? 1 : -1;
+            if(state.type1 === 'p' && state.type2 === 'n') sign = -1;
+            if(state.type1 === 'n' && state.type2 === 'p') sign = 1;
+
+            ctxCharge.fillStyle = sign > 0 ? 'rgba(52,211,153,0.4)' : 'rgba(248,113,113,0.4)';
+            ctxCharge.fillRect(midX - dw1, zeroY, dw1, sign * 20);
+
+            ctxCharge.fillStyle = sign > 0 ? 'rgba(248,113,113,0.4)' : 'rgba(52,211,153,0.4)';
+            ctxCharge.fillRect(midX, zeroY, dw2, -sign * 20);
+        }
+
+        function drawIv(p) {
+            const dpr = window.devicePixelRatio || 1;
+            ctxIv.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctxIv.clearRect(0, 0, cIv.width/dpr, cIv.height/dpr);
+
+            const w = cIv.width / dpr;
+            const h = cIv.height / dpr;
+            const originX = w * 0.35;
+            const originY = h * 0.75;
+
+            ctxIv.strokeStyle = '#243552';
+            ctxIv.beginPath(); ctxIv.moveTo(0, originY); ctxIv.lineTo(w, originY); ctxIv.stroke();
+            ctxIv.beginPath(); ctxIv.moveTo(originX, 0); ctxIv.lineTo(originX, h); ctxIv.stroke();
+
+            ctxIv.strokeStyle = '#38bdf8';
+            ctxIv.lineWidth = 2;
+            ctxIv.beginPath();
+
+            let pts = [];
+            for(let v=-2.0; v<=2.0; v+=0.05) {
+                let current = 0;
+                let factor = Math.exp(-Math.abs(p.Vd)/0.04);
+                if(v > 0) {
+                    current = 0.08 * factor * (Math.exp(v/0.22) - 1);
+                } else {
+                    current = 0.01 * (Math.exp(v*3) - 1);
+                }
+                let ptX = originX + v * (w * 0.28);
+                let ptY = originY - current * 16;
+                pts.push({x: ptX, y: ptY});
+            }
+
+            pts.forEach((pt, idx) => {
+                if(pt.y >= 2 && pt.y <= h-2) {
+                    if(idx === 0) ctxIv.moveTo(pt.x, pt.y); else ctxIv.lineTo(pt.x, pt.y);
+                }
+            });
+            ctxIv.stroke();
+
+            if(state.stage > 0.9) {
+                let v = state.bias;
+                let current = v > 0 ? 0.08 * Math.exp(-Math.abs(p.Vd)/0.04) * (Math.exp(v/0.22) - 1) : 0.01 * (Math.exp(v*3) - 1);
+                let dotX = originX + v * (w * 0.28);
+                let dotY = originY - current * 16;
+
+                ctxIv.fillStyle = '#f43f5e';
+                ctxIv.shadowBlur = 6;
+                ctxIv.shadowColor = '#f43f5e';
+                ctxIv.beginPath(); ctxIv.arc(dotX, dotY, 5, 0, Math.PI*2); ctxIv.fill();
+                ctxIv.shadowBlur = 0;
+            }
+        }
+
+        function loop() {
+            let p = calcPhysics();
+            drawBand(p);
+            drawCharge(p);
+            drawIv(p);
+            requestAnimationFrame(loop);
+        }
+
+        window.onload = () => {
+            initUI();
+            updateBadge();
+            resize();
+            initParticles();
+            loop();
+        };
+    </script>
 </body>
 </html>
