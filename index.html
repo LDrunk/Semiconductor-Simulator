@@ -2,770 +2,554 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>异质结能带演变与特性精细仿真系统 - 完美断崖版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>能带演变与仿真系统</title>
     <style>
-        :root {
-            --bg-color: #0b0f19;
-            --panel-bg: #151f32;
-            --border-color: #243552;
-            --text-main: #f1f5f9;
-            --text-muted: #64748b;
-            --accent-blue: #38bdf8;
-            --accent-green: #34d399;
-            --accent-red: #f87171;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background: #0a0e17;
+            font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif;
             padding: 20px;
-            overflow-y: auto; 
-            min-height: 100vh;
+            color: #e2e8f0;
+            display: flex; justify-content: center;
         }
-
-        header {
-            background-color: var(--panel-bg);
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
+        .main-container { width:100%; max-width:1400px; display:flex; flex-direction:column; gap:16px; }
+        .header {
+            background:#111827; padding:14px 24px; border-radius:12px;
+            border:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;
         }
-
-        header h1 {
-            font-size: 20px;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .header h1 {
+            font-size:1.4rem; font-weight:700;
+            background: linear-gradient(135deg, #38bdf8, #a78bfa);
+            background-clip: text; -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
         }
-
-        .junction-badge {
-            background-color: #0284c7;
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 0 8px rgba(2, 132, 199, 0.4);
+        .badge { background:#0f172a; border:1px solid #334155; padding:6px 14px; border-radius:6px; font-size:0.85rem; color:#94a3b8; }
+        
+        .twin-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+        
+        .chart-grid { display:grid; grid-template-columns: 1.25fr 0.75fr; gap:16px; }
+        
+        @media (max-width:950px) { 
+            .twin-grid { grid-template-columns:1fr; } 
+            .chart-grid { grid-template-columns:1fr; }
         }
-
-        .main-layout {
-            display: flex;
-            flex-direction: row;
-            gap: 16px;
-            flex-wrap: wrap;
+        
+        .canvas-card {
+            background:#0f172a; border-radius:12px; border:1px solid #1e293b;
+            overflow:hidden; display:flex; flex-direction:column;
         }
-
-        .side-panel {
-            flex: 1;
-            min-width: 300px;
-            max-width: 340px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        .canvas-card .card-label {
+            padding:10px 14px; font-size:0.8rem; font-weight:600; color:#94a3b8;
+            background:#111827; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between;
         }
-
-        .center-area {
-            flex: 2;
-            min-width: 500px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        .canvas-card .card-label span { color: #38bdf8; font-weight: normal; font-size: 0.75rem;}
+        
+        .canvas-wrap { flex:1; position:relative; width: 100%; min-height: 320px; height: 320px; }
+        canvas { display:block; width:100%; height:100%; }
+        
+        .info-bar { display:flex; justify-content:space-between; padding:6px 14px; font-size:0.7rem; color:#64748b; background:#0f172a; border-top:1px solid #1e293b; }
+        
+        .control-panel {
+            background:#111827; border:1px solid #1e293b; border-radius:12px; padding:16px;
+            display:flex; flex-direction:column; gap:14px;
         }
-
-        .card {
-            background-color: var(--panel-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            padding: 18px;
+        .panel-section { background:#0f172a; border-radius:8px; padding:12px; border:1px solid #1e293b; display: flex; flex-direction: column; }
+        .panel-section h3 { font-size:0.85rem; font-weight:600; color:#38bdf8; margin-bottom:10px; border-left:3px solid #38bdf8; padding-left:8px; }
+        
+        .config-block-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width:550px) { .config-block-wrapper { grid-template-columns: 1fr; } }
+        
+        .mat-config-block { display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.01); padding: 8px; border-radius: 6px; border: 1px dashed #1e293b;}
+        .mat-top-row { display: flex; gap: 8px; } 
+        .mat-bottom-row { display: flex; flex-direction: column; gap: 4px; } 
+        
+        .control-row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+        .control-row .control-item { flex:1 1 110px; display:flex; flex-direction:column; gap:4px; }
+        .control-item label {
+            font-size:0.7rem; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;
+            display:flex; justify-content:space-between; align-items:baseline;
         }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: var(--accent-blue);
-            border-left: 4px solid var(--accent-blue);
-            padding-left: 8px;
-            margin-bottom: 12px;
-        }
-
-        .control-group {
-            margin-bottom: 12px;
-        }
-
-        .control-group label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 6px;
-        }
-
-        .control-group label .val {
-            color: var(--text-main);
-            font-weight: bold;
-        }
-
+        .doping-value { font-weight:600; color:#cbd5e1; font-size:0.75rem; }
+        
         select, input[type="range"] {
-            width: 100%;
-            background-color: #090d16;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
+            background:#1e293b; border:1px solid #334155; color:#e2e8f0;
+            padding:6px 8px; border-radius:6px; font-size:0.8rem; outline:none; font-family:inherit; width: 100%;
         }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            height: 6px;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-blue);
-        }
-
-        .btn-group {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .btn {
-            background-color: #090d16;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px;
-            font-size: 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .btn.active, .btn:hover {
-            background-color: var(--accent-blue);
-            color: #0b0f19;
-            font-weight: bold;
-        }
-
-        .canvas-wrapper {
-            position: relative;
-            height: 440px; 
-            background-color: #090d16;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .bottom-charts {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .stage-banner {
-            background: rgba(9, 13, 22, 0.9);
-            border: 1px solid #38bdf8;
-            color: #38bdf8;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 13px;
-            margin-bottom: 10px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .param-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            margin-top: 6px;
-        }
-
-        .param-table th, .param-table td {
-            padding: 6px;
-            border-bottom: 1px solid var(--border-color);
-            text-align: left;
-        }
-
-        .param-table th { color: #64748b; }
-
-        .legend {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            font-size: 11px;
-            margin-top: 10px;
-            background: rgba(0,0,0,0.2);
-            padding: 8px;
-            border-radius: 6px;
-        }
-
-        .legend-item { display: flex; align-items: center; gap: 6px; }
-        .line-dot { width: 12px; height: 4px; }
-        .circle-dot { width: 8px; height: 8px; border-radius: 50%; }
+        input[type="range"] { appearance:none; -webkit-appearance:none; height:4px; padding:0; background:#334155; cursor:pointer; border-radius:2px; width: 100%; }
+        input[type="range"]::-moz-range-track { height:4px; background:#334155; border-radius:2px; }
+        input[type="range"]::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:#38bdf8; border:none; cursor:pointer; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#38bdf8; border:none; margin-top:-6px; }
+        input[type="range"]::-webkit-slider-runnable-track { height:4px; background:#334155; border-radius:2px; }
+        input[type="range"]:disabled { opacity:0.3; cursor:not-allowed; }
+        
+        .btn-group { display:flex; gap:4px; width: 100%; }
+        .btn { flex:1; text-align:center; background:#1e293b; border:1px solid #334155; color:#cbd5e1; padding:5px 10px; border-radius:6px; font-size:0.75rem; cursor:pointer; transition:0.2s; }
+        .btn.active { background:#38bdf8; color:#0f172a; font-weight:bold; border-color:#38bdf8; }
+        
+        .warning-text { color:#facc15; font-size:0.75rem; text-align:center; margin-top:4px; padding:6px; background:rgba(250,204,21,0.08); border-radius:6px; }
+        
+        /* 参数表 */
+        .param-table { width:100%; font-size:0.8rem; border-collapse:collapse; margin-top:4px; }
+        .param-table tr { transition: background 0.2s; }
+        .param-table tr:hover { background: rgba(255,255,255,0.02); }
+        .param-table td { padding:9px 8px; border-bottom:1px solid #1e293b; color:#cbd5e1; }
+        .param-table td:nth-child(odd) { color:#94a3b8; width:28%; } 
+        .param-table td:nth-child(even) { font-weight: 600; color:#38bdf8; width:22%; } 
+        .param-table td[colspan="3"] { width: 72%; }
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>异质结能带演变与特性精细仿真系统</h1>
-        <div id="junction-badge" class="junction-badge">正在识别结类型...</div>
-    </header>
-
-    <div class="main-layout">
+    <div class="main-container">
+        <div class="header">
+            <h1>⚡ 半导体异质结能带与特性仿真系统</h1>
+            <div class="badge" id="junction-badge">同质/异质结</div>
+        </div>
         
-        <div class="side-panel">
-            <div class="card">
-                <div class="card-title">左半导体 (Region 1)</div>
-                <div class="control-group">
-                    <label>材料选择</label>
-                    <select id="mat1">
-                        <option value="GaAs" selected>GaAs (砷化镓)</option>
-                        <option value="Si">Si (硅)</option>
-                        <option value="Ge">Ge (锗)</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>导电类型</label>
-                    <select id="type1">
-                        <option value="p" selected>P 型</option>
-                        <option value="n">N 型</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>掺杂浓度 N₁ <span class="val" id="lbl-na">1.0e16 cm⁻³</span></label>
-                    <input type="range" id="range-na" min="14" max="18" step="0.2" value="16">
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">右半导体 (Region 2)</div>
-                <div class="control-group">
-                    <label>材料选择</label>
-                    <select id="mat2">
-                        <option value="Si" selected>Si (硅)</option>
-                        <option value="Ge">Ge (锗)</option>
-                        <option value="GaAs">GaAs (砷化镓)</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>导电类型</label>
-                    <select id="type2">
-                        <option value="n" selected>N 型</option>
-                        <option value="p">P 型</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>掺杂浓度 N₂ <span class="val" id="lbl-nd">1.0e16 cm⁻³</span></label>
-                    <input type="range" id="range-nd" min="14" max="18" step="0.2" value="16">
-                </div>
-            </div>
-        </div>
-
-        <div class="center-area">
-            <div id="stage-banner" class="stage-banner">第一步: 真空能级对齐</div>
-            <div class="canvas-wrapper">
-                <canvas id="bandCanvas"></canvas>
-            </div>
-
-            <div class="bottom-charts">
-                <div class="card">
-                    <div class="card-title">空间电荷分布 ＆ 耗尽宽度</div>
-                    <div style="height: 120px;"><canvas id="chargeCanvas"></canvas></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">I-V 伏安特性同步工作点</div>
-                    <div style="height: 120px;"><canvas id="ivCanvas"></canvas></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="side-panel">
-            <div class="card">
-                <div class="card-title">第一步 → 第三步 平滑过渡动画</div>
-                <div class="control-group">
-                    <label style="color:#60a5fa; font-weight:bold;">拖动查看费米能级对准过程：<span class="val" id="lbl-stage">0%</span></label>
-                    <input type="range" id="range-stage" min="0" max="1" step="0.01" value="0" style="background:#1e293b; height:10px;">
-                </div>
-                <p style="font-size:11px; color:#94a3b8; line-height:1.4;">
-                    提示：演变未达到 100% 前系统处于独立/接触中状态，外加电压锁定为 0。完全建立平衡后方可加压。
-                </p>
-            </div>
-
-            <div class="card">
-                <div class="card-title">环境与外加电压控制</div>
-                <div class="control-group">
-                    <label>工作温度 T <span class="val" id="lbl-temp">300 K</span></label>
-                    <input type="range" id="range-temp" min="250" max="400" step="5" value="300">
-                </div>
-                <div class="control-group">
-                    <label>外加电压 Vₐ (正偏 / 反偏) <span class="val" id="lbl-bias">0.00 V</span></label>
-                    <input type="range" id="range-bias" min="-2" max="2" step="0.04" value="0">
-                </div>
-                <div class="control-group">
-                    <label>微观粒子动画流速</label>
-                    <div class="btn-group">
-                        <div class="btn" id="sp-05">0.5x</div>
-                        <div class="btn active" id="sp-10">1.0x</div>
-                        <div class="btn" id="sp-20">2.0x</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">实时演算参数</div>
-                <table class="param-table">
-                    <tr><th>参数</th><th>左侧</th><th>右侧</th></tr>
-                    <tr><td>禁带 E_g</td><td id="m-eg1">-</td><td id="m-eg2">-</td></tr>
-                    <tr><td>亲和势 χ</td><td id="m-chi1">-</td><td id="m-chi2">-</td></tr>
-                    <tr><td>接触势垒 V_D</td><td colspan="2" style="text-align:center;color:var(--accent-blue);" id="m-vd">-</td></tr>
-                    <tr><td>耗尽总宽 W</td><td colspan="2" style="text-align:center;color:var(--accent-green);" id="m-w">-</td></tr>
+        <div class="twin-grid">
+            <div class="control-panel" id="controlPanel"></div>
+            
+            <div class="canvas-card" style="padding:16px;">
+                <div style="font-size:0.85rem; font-weight:600; color:#38bdf8; margin-bottom:8px; border-left:3px solid #38bdf8; padding-left:8px;">📋 实时演算物理参数</div>
+                <table class="param-table" id="paramTable">
+                    <tr><td>左侧材料</td><td id="p-leftMat">-</td><td>右侧材料</td><td id="p-rightMat">-</td></tr>
+                    <tr><td>左侧带隙 Eg</td><td id="p-leftEg">-</td><td>右侧带隙 Eg</td><td id="p-rightEg">-</td></tr>
+                    <tr><td>左侧亲和能 χ</td><td id="p-leftChi">-</td><td>右侧亲和能 χ</td><td id="p-rightChi">-</td></tr>
+                    <tr><td>平衡费米能级 Ef</td><td id="p-ef-avg" colspan="3">-</td></tr>
+                    <tr><td>内建电势 Vbi</td><td id="p-Vbi">-</td><td>接触电势差 Vd</td><td id="p-Vd">-</td></tr>
+                    <tr><td>当前势垒高度</td><td id="p-barrier">-</td><td>当前耗尽层总宽</td><td id="p-W">-</td></tr>
                 </table>
-
-                <div class="legend">
-                    <div class="legend-item"><div class="line-dot" style="background:#ef4444;"></div><span>导带 Ec</span></div>
-                    <div class="legend-item"><div class="line-dot" style="background:#3b82f6;border-top:1px dashed #3b82f6;height:0;"></div><span>费米 Ef</span></div>
-                    <div class="legend-item"><div class="line-dot" style="background:#10b981;"></div><span>价带 Ev</span></div>
-                    <div class="legend-item"><div class="line-dot" style="background:#ffffff;border-top:1px dotted #fff;height:0;"></div><span>真空 E0</span></div>
-                    <div class="legend-item"><div class="circle-dot" style="background:#60a5fa;"></div><span>电子 (e)</span></div>
-                    <div class="legend-item"><div class="circle-dot" style="background:#f43f5e;"></div><span>空穴 (h)</span></div>
-                </div>
             </div>
         </div>
 
+        <div class="chart-grid">
+            <div class="canvas-card">
+                <div class="card-label">📊 微观能带演变图 <span id="band-state-text">独立状态</span></div>
+                <div class="canvas-wrap"><canvas id="bandCanvas"></canvas></div>
+                <div class="info-bar" id="band-info">势垒 | 耗尽宽度</div>
+            </div>
+            
+            <div class="canvas-card">
+                <div class="card-label">📈 I‑V 特性曲线 <span id="iv-state-text">工作点映射</span></div>
+                <div class="canvas-wrap"><canvas id="ivCanvas"></canvas></div>
+                <div class="info-bar" id="iv-info">电压/电流</div>
+            </div>
+        </div>
     </div>
 
     <script>
+    (function () {
         const mats = {
-            'Si':   { eg: 1.12, chi: 4.05, nc: 2.8e19, nv: 1.0e19, eps: 11.7 },
-            'Ge':   { eg: 0.66, chi: 3.65, nc: 1.04e19, nv: 6.0e18, eps: 16.0 }, 
-            'GaAs': { eg: 1.42, chi: 4.45, nc: 4.7e17, nv: 7.0e18, eps: 13.1 }  
+            'Si':   { eg:1.12, chi:4.05, nc:2.8e19, nv:1.0e19, eps:11.7, ni300:1.5e10, mun:1350, mup:480 },
+            'Ge':   { eg:0.66, chi:3.65, nc:1.04e19, nv:6.0e18, eps:16.0, ni300:2.4e13, mun:3900, mup:1900 },
+            'GaAs': { eg:1.42, chi:4.45, nc:4.7e17, nv:7.0e18, eps:13.1, ni300:1.8e6, mun:8000, mup:400 }
         };
+        const q = 1.602e-19, k = 1.38e-23, eps0 = 8.854e-12, k_eV = 8.617333e-5;
 
-        const q = 1.602e-19, k = 1.38e-23, eps0 = 8.854e-12;
-        let state = {
-            mat1: 'GaAs', type1: 'p', N1: 1e16,
-            mat2: 'Si', type2: 'n', N2: 1e16,
+        const state = {
+            leftMat: 'GaAs', leftType: 'p', leftDoping: 1e16,
+            rightMat: 'Si', rightType: 'n', rightDoping: 1e16,
             temp: 300, bias: 0.0, stage: 0.0, speed: 1.0
         };
-        let particles = [];
+        const particles = [];
+        const isHomojunction = () => state.leftMat === state.rightMat;
 
-        const cBand = document.getElementById('bandCanvas');
-        const ctxBand = cBand.getContext('2d');
-        const cCharge = document.getElementById('chargeCanvas');
-        const ctxCharge = cCharge.getContext('2d');
-        const cIv = document.getElementById('ivCanvas');
-        const ctxIv = cIv.getContext('2d');
-
-        function resize() {
-            const dpr = window.devicePixelRatio || 1;
-            [cBand, cCharge, cIv].forEach(c => {
-                const rect = c.parentElement.getBoundingClientRect();
-                c.width = rect.width * dpr;
-                c.height = rect.height * dpr;
-            });
-        }
-        window.addEventListener('resize', resize);
-
-        function initUI() {
-            const listen = (id, prop, isFloat, cb) => {
-                document.getElementById(id).addEventListener('input', e => {
-                    state[prop] = isFloat ? parseFloat(e.target.value) : e.target.value;
-                    if(cb) cb(e.target.value);
-                });
-            };
-
-            listen('mat1', 'mat1', false, () => { updateBadge(); resetProcess(); });
-            listen('mat2', 'mat2', false, () => { updateBadge(); resetProcess(); });
-            listen('type1', 'type1', false, () => { updateBadge(); resetProcess(); });
-            listen('type2', 'type2', false, () => { updateBadge(); resetProcess(); });
-
-            listen('range-na', 'N1', true, v => {
-                state.N1 = Math.pow(10, v);
-                document.getElementById('lbl-na').innerText = state.N1.toExponential(1) + ' cm⁻³';
-            });
-            listen('range-nd', 'N2', true, v => {
-                state.N2 = Math.pow(10, v);
-                document.getElementById('lbl-nd').innerText = state.N2.toExponential(1) + ' cm⁻³';
-            });
-            listen('range-temp', 'temp', true, v => {
-                document.getElementById('lbl-temp').innerText = v + ' K';
-            });
-            listen('range-stage', 'stage', true, v => {
-                document.getElementById('lbl-stage').innerText = Math.round(v*100) + '%';
-                if(v < 1.0) {
-                    state.bias = 0;
-                    document.getElementById('range-bias').value = 0;
-                    document.getElementById('lbl-bias').innerText = '0.00 V';
-                }
-            });
-            listen('range-bias', 'bias', true, v => {
-                if(state.stage < 1.0) {
-                    state.stage = 1.0;
-                    document.getElementById('range-stage').value = 1.0;
-                    document.getElementById('lbl-stage').innerText = '100%';
-                }
-                document.getElementById('lbl-bias').innerText = parseFloat(v).toFixed(2) + ' V';
-            });
-
-            const speeds = {'sp-05': 0.5, 'sp-10': 1.0, 'sp-20': 2.0};
-            Object.keys(speeds).forEach(id => {
-                document.getElementById(id).addEventListener('click', e => {
-                    document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    state.speed = speeds[id];
-                });
-            });
-        }
-
-        function resetProcess() {
-            state.stage = 0; state.bias = 0;
-            document.getElementById('range-stage').value = 0;
-            document.getElementById('lbl-stage').innerText = '0%';
-            document.getElementById('range-bias').value = 0;
-            document.getElementById('lbl-bias').innerText = '0.00 V';
-        }
-
-        function updateBadge() {
-            let b = document.getElementById('junction-badge');
-            let t2 = state.type2 === 'p' ? 'P' : 'N';
-            b.innerText = `当前形成：${state.type1}${t2} 结`;
+        function formatDoping(val) {
+            if (val >= 1e18) return (val/1e18).toFixed(1)+'×10¹⁸';
+            if (val >= 1e17) return (val/1e17).toFixed(1)+'×10¹⁷';
+            if (val >= 1e16) return (val/1e16).toFixed(1)+'×10¹⁶';
+            if (val >= 1e15) return (val/1e15).toFixed(1)+'×10¹⁵';
+            return (val/1e14).toFixed(1)+'×10¹⁴';
         }
 
         function calcPhysics() {
-            let p1 = mats[state.mat1];
-            let p2 = mats[state.mat2];
-            let Vt = (k * state.temp) / q;
-
-            let vBuffer = 0.25;
-            let ef1_vac = (state.type1 === 'n') 
-                ? p1.chi + vBuffer + Vt*Math.log(p1.nc/state.N1)*0.3 
-                : p1.chi + p1.eg - vBuffer - Vt*Math.log(p1.nv/state.N1)*0.3;
-            let ef2_vac = (state.type2 === 'n') 
-                ? p2.chi + vBuffer + Vt*Math.log(p2.nc/state.N2)*0.3 
-                : p2.chi + p2.eg - vBuffer - Vt*Math.log(p2.nv/state.N2)*0.3;
-
-            let Vd = ef1_vac - ef2_vac; 
-            let V_total = Vd - state.bias;
-            let V_total_abs = Math.abs(V_total);
-
-            let eps1 = p1.eps * eps0, eps2 = p2.eps * eps0;
-            let n1_m = state.N1 * 1e6, n2_m = state.N2 * 1e6;
-            
-            let V1 = V_total_abs * (eps2 * n2_m) / (eps1 * n1_m + eps2 * n2_m);
-            let V2 = V_total_abs * (eps1 * n1_m) / (eps1 * n1_m + eps2 * n2_m);
-
-            let x1 = Math.sqrt((2 * eps1 * V1) / (q * n1_m)) * 1e9;
-            let x2 = Math.sqrt((2 * eps2 * V2) / (q * n2_m)) * 1e9;
-            let W = x1 + x2;
-
-            document.getElementById('m-eg1').innerText = p1.eg.toFixed(2) + ' eV';
-            document.getElementById('m-eg2').innerText = p2.eg.toFixed(2) + ' eV';
-            document.getElementById('m-chi1').innerText = p1.chi.toFixed(2) + ' eV';
-            document.getElementById('m-chi2').innerText = p2.chi.toFixed(2) + ' eV';
-            document.getElementById('m-vd').innerText = Math.abs(Vd).toFixed(3) + ' V';
-            document.getElementById('m-w').innerText = (W * state.stage).toFixed(1) + ' nm';
-
-            return { ef1_vac, ef2_vac, Vd, V1, V2, x1, x2, W };
+            const L = mats[state.leftMat], R = mats[state.rightMat];
+            const Vt = (k * state.temp) / q;
+            const computeEf = (mat, type, doping) => {
+                const midGap = -mat.chi - mat.eg/2;
+                const shift = type==='n' ? Vt*Math.log(mat.nc/doping)*0.6 : -Vt*Math.log(mat.nv/doping)*0.6;
+                return midGap + shift;
+            };
+            const ef1 = computeEf(L, state.leftType, state.leftDoping);
+            const ef2 = computeEf(R, state.rightType, state.rightDoping);
+            const Vd = ef1 - ef2;
+            const Vtotal = Math.abs(Vd - state.bias);
+            const eps1 = L.eps*eps0, eps2 = R.eps*eps0;
+            const n1 = state.leftDoping*1e6, n2 = state.rightDoping*1e6;
+            const V1 = Vtotal * (eps2*n2) / (eps1*n1 + eps2*n2);
+            const V2 = Vtotal * (eps1*n1) / (eps1*n1 + eps2*n2);
+            const x1 = Math.sqrt((2*eps1*V1)/(q*n1))*1e9;
+            const x2 = Math.sqrt((2*eps2*V2)/(q*n2))*1e9;
+            const W = x1 + x2;
+            const Vbi = isHomojunction()
+                ? (k_eV*state.temp)*Math.log(state.leftDoping*state.rightDoping /
+                    Math.pow(L.ni300*Math.pow(state.temp/300,1.5)*Math.exp(-L.eg/(2*k_eV*state.temp)+L.eg/(2*k_eV*300)),2))
+                : Vd;
+            return { L, R, ef1, ef2, Vd, Vbi, V1, V2, x1, x2, W };
         }
 
-        function initParticles() {
-            particles = [];
-            for(let i=0; i<140; i++) {
-                let left = Math.random() < 0.5;
+        function updateParticles(dt) {
+            const ph = calcPhysics();
+            const rate = 4*(1+Math.abs(ph.Vd - state.bias)*0.3)*state.speed;
+            if (particles.length < 60 && Math.random() < rate*dt) {
+                const left = Math.random()<0.5;
                 particles.push({
-                    left: left,
-                    type: left ? (state.type1 === 'p'?'h':'e') : (state.type2 === 'p'?'h':'e'),
-                    x_rel: Math.random(),
-                    y_fuzz: Math.random() * 20 - 10,
-                    vx: (Math.random() * 0.008 + 0.004)
+                    left, type: left ? (state.leftType==='p'?'h':'e') : (state.rightType==='p'?'h':'e'),
+                    x_rel:Math.random(), y_off:(Math.random()-0.5)*20,
+                    vx:0.004+Math.random()*0.009, life:1.0
                 });
             }
-        }
-
-        function drawBand(p) {
-            const dpr = window.devicePixelRatio || 1;
-            ctxBand.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctxBand.clearRect(0, 0, cBand.width/dpr, cBand.height/dpr);
-
-            const w = cBand.width / dpr;
-            const h = cBand.height / dpr;
-            const midX = w / 2;
-
-            let banner = document.getElementById('stage-banner');
-            if(state.stage === 0) {
-                banner.innerText = "第一步: 独立状态（左右侧真空能级对齐呈一条水平直线）";
-                banner.style.borderColor = "#94a3b8";
-            } else if(state.stage < 1) {
-                banner.innerText = "第二步: 平滑接触过渡（费米能级向中间靠拢对齐，真空能级保持平滑连续弯曲）";
-                banner.style.borderColor = "#f59e0b";
-            } else {
-                if(state.bias > 0.05) banner.innerText = "动态仿真 [正向偏置]: 势垒降低，费米能级发生非平衡拆分，多子跨越结区大量扩散";
-                else if(state.bias < -0.05) banner.innerText = "动态仿真 [反向偏置]: 势垒区加宽，阻挡扩散，仅存在极微少少子漂移";
-                else banner.innerText = "第三步: 热平衡建立（费米能级100%对齐呈完美直线，带边形成平滑弯曲与完美的不连续断崖）";
-                banner.style.borderColor = "#34d399";
-            }
-
-            const evScale = 115;          
-            const vacCompress = 3.3;     
-
-            let p1 = mats[state.mat1];
-            let p2 = mats[state.mat2];
-
-            let midY_left = p1.chi + p1.eg / 2;
-            let midY_right = state.stage * (p.Vd - state.bias) + p2.chi + p2.eg / 2;
-            let globalMidEV = (midY_left + midY_right) / 2;
-
-            const zeroVacY = (h * 0.53) - (globalMidEV - vacCompress) * evScale;
-
-            let dw1 = 0, dw2 = 0;
-            let W_nm = p.x1 + p.x2;
-            if(W_nm > 0) {
-                let total_visual_w = 140; 
-                dw1 = total_visual_w * (p.x1 / W_nm) * state.stage;
-                dw2 = total_visual_w * (p.x2 / W_nm) * state.stage;
-            }
-
-            let ly_vac = zeroVacY;
-            let ly_ef  = zeroVacY + (p.ef1_vac - vacCompress) * evScale;
-
-            let ry_vac = zeroVacY + (p.Vd - state.bias) * evScale * state.stage;
-            let ry_ef  = ry_vac + (p.ef2_vac - vacCompress) * evScale;
-
-            let sign = Math.sign(p.Vd - state.bias);
-
-            function getE0(x) {
-                if(x < midX) {
-                    if(x < midX - dw1) return ly_vac;
-                    let t = (x - (midX - dw1)) / (dw1 || 1); 
-                    return ly_vac + sign * p.V1 * evScale * state.stage * t * t;
-                } else {
-                    if(x > midX + dw2) return ry_vac;
-                    let t = ((midX + dw2) - x) / (dw2 || 1); 
-                    return ry_vac - sign * p.V2 * evScale * state.stage * t * t;
-                }
-            }
-
-            // 1. 绘制真空能级
-            ctxBand.lineWidth = 2.5;
-            ctxBand.strokeStyle = '#ffffff';
-            ctxBand.beginPath();
-            for(let x=0; x<w; x+=2) {
-                let y = getE0(x);
-                if(x===0) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y);
-            }
-            ctxBand.stroke();
-
-            // 2. 绘制费米能级
-            ctxBand.lineWidth = 1.5;
-            ctxBand.strokeStyle = '#3b82f6';
-            ctxBand.setLineDash([5, 3]);
-            ctxBand.beginPath(); ctxBand.moveTo(0, ly_ef); ctxBand.lineTo(midX, ly_ef); ctxBand.stroke();
-            ctxBand.beginPath(); ctxBand.moveTo(midX, ry_ef); ctxBand.lineTo(w, ry_ef); ctxBand.stroke();
-            ctxBand.setLineDash([]);
-
-            // 3. 绘制导带和价带曲线（取消强制连接，保留真实的断崖式不连续）
-            ctxBand.lineWidth = 3.5;
-            
-            // 左侧弯曲
-            ctxBand.strokeStyle = '#ef4444'; ctxBand.beginPath();
-            for(let x=0; x<=midX; x+=2) { let y = getE0(x) + (p1.chi - vacCompress) * evScale; if(x===0) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
-            ctxBand.stroke();
-
-            ctxBand.strokeStyle = '#10b981'; ctxBand.beginPath();
-            for(let x=0; x<=midX; x+=2) { let y = getE0(x) + (p1.chi + p1.eg - vacCompress) * evScale; if(x===0) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
-            ctxBand.stroke();
-
-            // 右侧弯曲
-            ctxBand.strokeStyle = '#ef4444'; ctxBand.beginPath();
-            for(let x=midX; x<w; x+=2) { let y = getE0(x) + (p2.chi - vacCompress) * evScale; if(x===midX) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
-            ctxBand.stroke();
-
-            ctxBand.strokeStyle = '#10b981'; ctxBand.beginPath();
-            for(let x=midX; x<w; x+=2) { let y = getE0(x) + (p2.chi + p2.eg - vacCompress) * evScale; if(x===midX) ctxBand.moveTo(x, y); else ctxBand.lineTo(x, y); }
-            ctxBand.stroke();
-
-            // 4. 边界辅助虚线（严格使用虚线，避免产生“上下连通”的错觉）
-            if(state.stage > 0.05) {
-                ctxBand.lineWidth = 1;
-                ctxBand.strokeStyle = 'rgba(255,255,255,0.12)';
-                ctxBand.setLineDash([3, 3]);
-                ctxBand.beginPath(); ctxBand.moveTo(midX-dw1, 0); ctxBand.lineTo(midX-dw1, h); ctxBand.stroke();
-                ctxBand.beginPath(); ctxBand.moveTo(midX+dw2, 0); ctxBand.lineTo(midX+dw2, h); ctxBand.stroke();
-                
-                // 异质结界面线调整为明显的细虚点线
-                ctxBand.strokeStyle = 'rgba(255,255,255,0.2)';
-                ctxBand.setLineDash([6, 6]);
-                ctxBand.beginPath(); ctxBand.moveTo(midX, 0); ctxBand.lineTo(midX, h); ctxBand.stroke();
-                ctxBand.setLineDash([]);
-            }
-
-            // 5. 粒子渲染
-            particles.forEach(pt => {
+            for (let i=particles.length-1; i>=0; i--) {
+                const p = particles[i];
                 let drive = 0;
-                if(state.stage >= 0.98) {
-                    drive = state.bias * 0.35; 
-                    if(state.bias < 0) drive = state.bias * 0.02; 
-                }
+                if (state.stage>=0.98) drive = state.bias>0 ? state.bias*0.25 : state.bias*0.02;
+                const mv = p.vx + drive*0.005;
+                if (p.type==='e') p.x_rel += mv*state.speed*dt*8;
+                else p.x_rel -= mv*state.speed*dt*8;
+                if (p.x_rel>1.1) p.x_rel=0;
+                if (p.x_rel<-0.1) p.x_rel=1;
+                p.life -= dt*0.2;
+                if (p.life<=0) particles.splice(i,1);
+            }
+        }
 
-                if(pt.type === 'e') pt.x_rel += (pt.vx + drive * 0.006) * state.speed;
-                else pt.x_rel -= (pt.vx + drive * 0.006) * state.speed;
-
-                if(pt.x_rel > 1) pt.x_rel = 0;
-                if(pt.x_rel < 0) pt.x_rel = 1;
-
-                let px = pt.left ? pt.x_rel * midX : midX + pt.x_rel * (w - midX);
-                if(px < 2) px = 2; if(px > w-2) px = w-2;
-
-                let vac_y = getE0(px);
-                let py = 0;
-
-                if(pt.left) {
-                    py = (pt.type === 'e') ? vac_y + (p1.chi - vacCompress) * evScale - 7 + pt.y_fuzz * 0.2 : vac_y + (p1.chi + p1.eg - vacCompress) * evScale + 9 + pt.y_fuzz * 0.2;
+        function drawBand(canvas, ctx) {
+            const cw = canvas.width / (window.devicePixelRatio || 1);
+            const ch = canvas.height / (window.devicePixelRatio || 1);
+            ctx.clearRect(0,0,cw,ch);
+            const midX = cw/2;
+            const ph = calcPhysics();
+            const { L, R, Vd, V1, V2, x1, x2, W, ef1, ef2 } = ph;
+            const E0_L = 0;
+            const ΔV_total = Vd - state.bias;
+            const signΔ = ΔV_total >= 0 ? 1 : -1;
+            const E0_R = E0_L - ΔV_total * state.stage;
+            const totalVis = Math.min(130, cw*0.35);
+            const dwL = W>0 ? (totalVis*(x1/W))*state.stage : 0;
+            const dwR = W>0 ? (totalVis*(x2/W))*state.stage : 0;
+            const E0_int = E0_L - signΔ * V1 * state.stage;
+            
+            const getE0 = (x) => {
+                if (x < midX - dwL) return E0_L;
+                if (x > midX + dwR) return E0_R;
+                if (x < midX) {
+                    const t = (x - (midX - dwL)) / (dwL || 1);
+                    return E0_L + (E0_int - E0_L) * t * t;
                 } else {
-                    py = (pt.type === 'e') ? vac_y + (p2.chi - vacCompress) * evScale - 7 + pt.y_fuzz * 0.2 : vac_y + (p2.chi + p2.eg - vacCompress) * evScale + 9 + pt.y_fuzz * 0.2;
+                    const t = ((midX + dwR) - x) / (dwR || 1);
+                    return E0_R + (E0_int - E0_R) * t * t;
                 }
+            };
+            const eMin = Math.min(-L.chi-L.eg, -R.chi-R.eg)-0.3;
+            const eMax = Math.max(E0_L, E0_R)+0.3;
+            const scale = ch*0.65/(eMax-eMin);
+            const toY = (energy) => ch*0.82 - (energy-eMin)*scale;
 
-                ctxBand.fillStyle = (pt.type === 'e') ? '#60a5fa' : '#f43f5e';
-                ctxBand.shadowBlur = 4;
-                ctxBand.shadowColor = ctxBand.fillStyle;
-                ctxBand.beginPath(); ctxBand.arc(px, py, 3.5, 0, Math.PI*2); ctxBand.fill();
-                ctxBand.shadowBlur = 0;
+            // 网格
+            ctx.strokeStyle='#1e293b'; ctx.lineWidth=0.5;
+            for(let i=0;i<=6;i++){ const y=ch*0.12+i*(ch*0.65)/6; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
+
+            // 真空能级
+            ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+            ctx.beginPath();
+            for(let x=0;x<cw;x+=4){ let y=toY(getE0(x)); x===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+            ctx.stroke(); ctx.setLineDash([]);
+
+            // 费米能级
+            const ef_avg = (ef1 + ef2)/2;
+            const base_efL = ef1 + (ef_avg - ef1) * state.stage;
+            const base_efR = ef2 + (ef_avg - ef2) * state.stage;
+            let efL, efR;
+            if (state.stage >= 1.0 && Math.abs(state.bias) > 0.001) {
+                efL = base_efL - state.bias/2;
+                efR = base_efR + state.bias/2;
+            } else {
+                efL = base_efL;
+                efR = base_efR;
+            }
+            const isEquilibrium = (state.stage >= 1.0 && Math.abs(state.bias) < 0.001);
+
+            ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1.5;
+            if (isEquilibrium) {
+                ctx.setLineDash([5,4]); const yEf = toY(ef_avg);
+                ctx.beginPath(); ctx.moveTo(0,yEf); ctx.lineTo(cw,yEf); ctx.stroke(); ctx.setLineDash([]);
+            } else {
+                ctx.setLineDash([5,4]);
+                ctx.beginPath(); ctx.moveTo(0, toY(efL)); ctx.lineTo(midX, toY(efL)); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(midX, toY(efR)); ctx.lineTo(cw, toY(efR)); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 导带与价带
+            const drawEcEv = (side) => {
+                const mat = side==='L'?L:R; const startX = side==='L'?0:midX; const endX = side==='L'?midX:cw;
+                ctx.lineWidth=2.8;
+                ctx.strokeStyle='#ef4444'; ctx.beginPath();
+                for(let x=startX;x<=endX;x+=3){ const y=toY(getE0(x)-mat.chi); x===startX?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+                ctx.stroke();
+                ctx.strokeStyle='#10b981'; ctx.beginPath();
+                for(let x=startX;x<=endX;x+=3){ const y=toY(getE0(x)-mat.chi-mat.eg); x===startX?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+                ctx.stroke();
+            };
+            drawEcEv('L'); drawEcEv('R');
+            if (isHomojunction()) {
+                ctx.lineWidth=2.8;
+                ctx.strokeStyle='#ef4444'; ctx.beginPath(); ctx.moveTo(midX-2, toY(getE0(midX-2)-L.chi)); ctx.lineTo(midX+2, toY(getE0(midX+2)-R.chi)); ctx.stroke();
+                ctx.strokeStyle='#10b981'; ctx.beginPath(); ctx.moveTo(midX-2, toY(getE0(midX-2)-L.chi-L.eg)); ctx.lineTo(midX+2, toY(getE0(midX+2)-R.chi-R.eg)); ctx.stroke();
+            }
+
+            // 耗尽层
+            if (dwL>0||dwR>0) {
+                const leftEdge=midX-dwL, rightEdge=midX+dwR;
+                ctx.fillStyle='rgba(255,180,100,0.1)'; ctx.fillRect(leftEdge,0,dwL+dwR,ch);
+                ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.2; ctx.setLineDash([4,4]);
+                ctx.beginPath(); ctx.moveTo(leftEdge,0); ctx.lineTo(leftEdge,ch); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(rightEdge,0); ctx.lineTo(rightEdge,ch); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle='#f59e0b'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+                ctx.fillText('耗尽层', (leftEdge+rightEdge)/2, ch*0.14);
+            }
+
+            // 界面中线
+            ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+            ctx.beginPath(); ctx.moveTo(midX,0); ctx.lineTo(midX,ch); ctx.stroke(); ctx.setLineDash([]);
+
+            // 粒子渲染
+            particles.forEach(p => {
+                const px = p.left ? p.x_rel*midX : midX + p.x_rel*(cw-midX);
+                const e0 = getE0(px); const mat = px<midX ? L : R;
+                const py = p.type==='e' ? toY(e0-mat.chi)-4 : toY(e0-mat.chi-mat.eg)+4;
+                ctx.fillStyle = p.type==='e'?'#60a5fa':'#f43f5e';
+                ctx.beginPath(); ctx.arc(px,py,3,0,Math.PI*2); ctx.fill();
+                ctx.font = '13px sans-serif'; ctx.fillText(p.type==='e' ? 'e⁻' : 'h⁺', px + 5, py + 3);
             });
 
-            ctxBand.fillStyle = '#ffffff'; ctxBand.fillText("真空能级 E₀", 10, ly_vac - 6);
-            ctxBand.fillStyle = '#ef4444'; ctxBand.fillText("导带 E_c", 10, ly_vac + (p1.chi - vacCompress)*evScale - 6);
-            ctxBand.fillStyle = '#3b82f6'; ctxBand.fillText("费米能级 E_f", 10, ly_ef - 6);
-            ctxBand.fillStyle = '#10b981'; ctxBand.fillText("价带 E_v", 10, ly_vac + (p1.chi+p1.eg - vacCompress)*evScale + 14);
+            // 标签文字
+            ctx.fillStyle='#64748b'; ctx.font='10px sans-serif'; ctx.textAlign = 'start';
+            ctx.fillText('E₀', 10, toY(E0_L)-6);
+            ctx.fillText('Ec', 10, toY(E0_L - L.chi)-6);
+            ctx.fillText('Ev', 10, toY(E0_L - L.chi - L.eg)+12);
+
+            document.getElementById('band-info').innerHTML = `势垒高度: ${Math.abs(Vd-state.bias).toFixed(3)} eV | 宽度: ${(W*state.stage).toFixed(1)} nm`;
+            const bandStateEl = document.getElementById('band-state-text');
+            if (state.stage === 0) bandStateEl.textContent = '独立能带';
+            else if (state.stage < 1) bandStateEl.textContent = '接触演变中';
+            else if (Math.abs(state.bias) < 0.001) bandStateEl.textContent = '热平衡建立';
+            else bandStateEl.textContent = '加压非平衡';
+
+            updateParamPanel(ph, ef_avg);
         }
 
-        function drawCharge(p) {
-            const dpr = window.devicePixelRatio || 1;
-            ctxCharge.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctxCharge.clearRect(0, 0, cCharge.width/dpr, cCharge.height/dpr);
-
-            const w = cCharge.width / dpr;
-            const h = cCharge.height / dpr;
-            const midX = w / 2;
-            const zeroY = h / 2;
-
-            ctxCharge.strokeStyle = '#243552';
-            ctxCharge.beginPath(); ctxCharge.moveTo(0, zeroY); ctxCharge.lineTo(w, zeroY); ctxCharge.stroke();
-            ctxCharge.beginPath(); ctxCharge.moveTo(midX, 0); ctxCharge.lineTo(midX, h); ctxCharge.stroke();
-
-            if(state.stage < 0.05) return;
-
-            let dw1 = 0, dw2 = 0;
-            let W_nm = p.x1 + p.x2;
-            if(W_nm > 0) {
-                let total_visual_w = 140;
-                dw1 = total_visual_w * (p.x1 / W_nm) * state.stage;
-                dw2 = total_visual_w * (p.x2 / W_nm) * state.stage;
-            }
-
-            let sign = (p.Vd > 0) ? 1 : -1;
-            if(state.type1 === 'p' && state.type2 === 'n') sign = -1;
-            if(state.type1 === 'n' && state.type2 === 'p') sign = 1;
-
-            ctxCharge.fillStyle = sign > 0 ? 'rgba(52,211,153,0.4)' : 'rgba(248,113,113,0.4)';
-            ctxCharge.fillRect(midX - dw1, zeroY, dw1, sign * 20);
-
-            ctxCharge.fillStyle = sign > 0 ? 'rgba(248,113,113,0.4)' : 'rgba(52,211,153,0.4)';
-            ctxCharge.fillRect(midX, zeroY, dw2, -sign * 20);
+        function updateParamPanel(ph, efAvg) {
+            document.getElementById('p-leftMat').textContent = state.leftMat + ` (${state.leftType.toUpperCase()})`;
+            document.getElementById('p-rightMat').textContent = state.rightMat + ` (${state.rightType.toUpperCase()})`;
+            document.getElementById('p-leftEg').textContent = ph.L.eg.toFixed(2)+' eV';
+            document.getElementById('p-rightEg').textContent = ph.R.eg.toFixed(2)+' eV';
+            document.getElementById('p-leftChi').textContent = ph.L.chi.toFixed(2)+' eV';
+            document.getElementById('p-rightChi').textContent = ph.R.chi.toFixed(2)+' eV';
+            document.getElementById('p-ef-avg').textContent = efAvg.toFixed(3)+' eV';
+            document.getElementById('p-Vbi').textContent = ph.Vbi.toFixed(3)+' V';
+            document.getElementById('p-Vd').textContent = ph.Vd.toFixed(3)+' V';
+            document.getElementById('p-barrier').textContent = Math.abs(ph.Vd-state.bias).toFixed(3)+' eV';
+            document.getElementById('p-W').textContent = (ph.W*state.stage).toFixed(2)+' nm';
         }
 
-        function drawIv(p) {
-            const dpr = window.devicePixelRatio || 1;
-            ctxIv.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctxIv.clearRect(0, 0, cIv.width/dpr, cIv.height/dpr);
+        function drawIv(canvas, ctx) {
+            const cw = canvas.width / (window.devicePixelRatio || 1);
+            const ch = canvas.height / (window.devicePixelRatio || 1);
+            ctx.clearRect(0, 0, cw, ch);
 
-            const w = cIv.width / dpr;
-            const h = cIv.height / dpr;
-            const originX = w * 0.35;
-            const originY = h * 0.75;
+            const pL = 50, pR = 20, pT = 20, pB = 32;
+            const plotW = cw - pL - pR, plotH = ch - pT - pB;
+            const Vt_vis = 0.12, I0 = 0.005;
 
-            ctxIv.strokeStyle = '#243552';
-            ctxIv.beginPath(); ctxIv.moveTo(0, originY); ctxIv.lineTo(w, originY); ctxIv.stroke();
-            ctxIv.beginPath(); ctxIv.moveTo(originX, 0); ctxIv.lineTo(originX, h); ctxIv.stroke();
+            const refV = Math.max(0.5, state.bias);
+            const maxI = I0 * (Math.exp(refV / Vt_vis) - 1);
+            const scaleI = maxI * 1.25;
 
-            ctxIv.strokeStyle = '#38bdf8';
-            ctxIv.lineWidth = 2;
-            ctxIv.beginPath();
+            const vMin = -2, vMax = 2;
+            const toX = v => pL + ((v - vMin) / (vMax - vMin)) * plotW;
+            const zeroX = toX(0), zeroY = pT + plotH * 0.8;
+            const toY = cur => zeroY - (cur / scaleI) * (plotH * 0.8);
 
-            let pts = [];
-            for(let v=-2.0; v<=2.0; v+=0.05) {
-                let current = 0;
-                let factor = Math.exp(-Math.abs(p.Vd)/0.04);
-                if(v > 0) {
-                    current = 0.08 * factor * (Math.exp(v/0.22) - 1);
-                } else {
-                    current = 0.01 * (Math.exp(v*3) - 1);
-                }
-                let ptX = originX + v * (w * 0.28);
-                let ptY = originY - current * 16;
-                pts.push({x: ptX, y: ptY});
+            // 刻度线与坐标网格
+            ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            for (let v = -2; v <= 2; v++) {
+                const px = toX(v);
+                ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.5;
+                ctx.beginPath(); ctx.moveTo(px, pT); ctx.lineTo(px, ch - pB); ctx.stroke();
+                if (v !== 0) ctx.fillText(v, px, zeroY + 6);
             }
 
-            pts.forEach((pt, idx) => {
-                if(pt.y >= 2 && pt.y <= h-2) {
-                    if(idx === 0) ctxIv.moveTo(pt.x, pt.y); else ctxIv.lineTo(pt.x, pt.y);
+            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            const yTicks = [0, scaleI / 2, scaleI];
+            yTicks.forEach(cur => {
+                const py = toY(cur);
+                ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.5;
+                ctx.beginPath(); ctx.moveTo(pL, py); ctx.lineTo(cw - pR, py); ctx.stroke();
+                if (cur !== 0) {
+                    let label = cur < 0.1 ? (cur * 1000).toFixed(0) + 'mA' : cur.toFixed(1) + 'A';
+                    ctx.fillText(label, zeroX - 6, py);
                 }
             });
-            ctxIv.stroke();
+            ctx.fillText('0', zeroX - 6, zeroY + 6);
 
-            if(state.stage > 0.9) {
-                let v = state.bias;
-                let current = v > 0 ? 0.08 * Math.exp(-Math.abs(p.Vd)/0.04) * (Math.exp(v/0.22) - 1) : 0.01 * (Math.exp(v*3) - 1);
-                let dotX = originX + v * (w * 0.28);
-                let dotY = originY - current * 16;
+            // 坐标主轴
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.moveTo(pL, zeroY); ctx.lineTo(cw - pR, zeroY); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(zeroX, pT); ctx.lineTo(zeroX, ch - pB); ctx.stroke(); 
 
-                ctxIv.fillStyle = '#f43f5e';
-                ctxIv.shadowBlur = 6;
-                ctxIv.shadowColor = '#f43f5e';
-                ctxIv.beginPath(); ctxIv.arc(dotX, dotY, 5, 0, Math.PI*2); ctxIv.fill();
-                ctxIv.shadowBlur = 0;
+            // 曲线绘制
+            ctx.save(); ctx.beginPath(); ctx.rect(pL, pT, plotW, plotH); ctx.clip(); 
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.2; ctx.beginPath();
+            let first = true;
+            for (let v = -2; v <= 2; v += 0.02) {
+                let cur = (v > 0) ? I0 * (Math.exp(v / Vt_vis) - 1) : -I0;
+                let px = toX(v), py = toY(cur);
+                first ? (ctx.moveTo(px, py), first = false) : ctx.lineTo(px, py);
             }
+            ctx.stroke();
+
+            // 实时工作特征点
+            if (state.stage > 0.9) {
+                const v = state.bias;
+                let cur = (v > 0) ? I0 * (Math.exp(v / Vt_vis) - 1) : -I0;
+                const px = toX(v), py = toY(cur);
+                ctx.fillStyle = '#facc15'; ctx.shadowBlur = 6; ctx.shadowColor = '#facc15';
+                ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+
+                let currentText = Math.abs(cur) < 0.1 ? (cur * 1000).toFixed(1) + ' mA' : cur.toExponential(1) + ' A';
+                ctx.font = 'bold 10px sans-serif'; ctx.fillStyle = '#facc15';
+                ctx.textAlign = px > cw - 70 ? 'right' : 'left';
+                ctx.fillText(` ${v.toFixed(2)}V, ${currentText}`, px > cw - 70 ? px - 8 : px + 8, py - 2);
+            }
+            ctx.restore(); 
+
+            document.getElementById('iv-info').innerHTML = `当前外加偏压: ${state.bias.toFixed(2)} V`;
         }
 
-        function loop() {
-            let p = calcPhysics();
-            drawBand(p);
-            drawCharge(p);
-            drawIv(p);
-            requestAnimationFrame(loop);
+        function setSpeed(speed, activeId) {
+            state.speed = speed;
+            ['sp05','sp1','sp2'].forEach(id => {
+                const btn = document.getElementById(id);
+                if(btn) btn.classList.toggle('active', id===activeId);
+            });
         }
 
-        window.onload = () => {
-            initUI();
+        function buildControls() {
+            const container = document.getElementById('controlPanel');
+            container.innerHTML = `
+            <div class="panel-section">
+                <h3>🧬 左右侧半导体材料配置</h3>
+                <div class="config-block-wrapper">
+                    <div class="mat-config-block">
+                        <div class="mat-top-row">
+                            <div style="flex:1;"><label style="font-size:0.7rem; color:#64748b; margin-bottom:4px; display:block;">左侧材料</label><select id="leftMat" style="width:100%;">${Object.keys(mats).map(m=>`<option value="${m}" ${m===state.leftMat?'selected':''}>${m}</option>`).join('')}</select></div>
+                            <div style="flex:1;"><label style="font-size:0.7rem; color:#64748b; margin-bottom:4px; display:block;">左类型</label><select id="leftType" style="width:100%;"><option value="p" ${state.leftType==='p'?'selected':''}>P型</option><option value="n" ${state.leftType==='n'?'selected':''}>N型</option></select></div>
+                        </div>
+                        <div class="mat-bottom-row">
+                            <label style="font-size:0.7rem; color:#64748b; display:flex; justify-content:space-between;">左掺杂 <span class="doping-value" id="leftDopingDisp">1.0×10¹⁶</span></label>
+                            <input type="range" id="leftDoping" min="15" max="18" value="16" step="0.2">
+                        </div>
+                    </div>
+                    
+                    <div class="mat-config-block">
+                        <div class="mat-top-row">
+                            <div style="flex:1;"><label style="font-size:0.7rem; color:#64748b; margin-bottom:4px; display:block;">右侧材料</label><select id="rightMat" style="width:100%;">${Object.keys(mats).map(m=>`<option value="${m}" ${m===state.rightMat?'selected':''}>${m}</option>`).join('')}</select></div>
+                            <div style="flex:1;"><label style="font-size:0.7rem; color:#64748b; margin-bottom:4px; display:block;">右类型</label><select id="rightType" style="width:100%;"><option value="n" ${state.rightType==='n'?'selected':''}>N型</option><option value="p" ${state.rightType==='p'?'selected':''}>P型</option></select></div>
+                        </div>
+                        <div class="mat-bottom-row">
+                            <label style="font-size:0.7rem; color:#64748b; display:flex; justify-content:space-between;">右掺杂 <span class="doping-value" id="rightDopingDisp">1.0×10¹⁶</span></label>
+                            <input type="range" id="rightDoping" min="15" max="18" value="16" step="0.2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>🌡️ 动态演化与偏压控制</h3>
+                <div class="control-row">
+                    <div class="control-item"><label>温度 (K) <span id="tempVal">300</span></label><input type="range" id="temp" min="250" max="400" value="300" step="10"></div>
+                    <div class="control-item"><label>建立平衡进度 <span id="stageVal">0%</span></label><input type="range" id="stage" min="0" max="1" step="0.01" value="0"></div>
+                    <div class="control-item"><label>外加偏压 V <span id="biasVal">0.00 V</span></label><input type="range" id="bias" min="-2" max="2" value="0" step="0.04" disabled></div>
+                    <div class="control-item"><label>微观速度</label><div class="btn-group">
+                        <span class="btn" id="sp05">0.5×</span><span class="btn active" id="sp1">1×</span><span class="btn" id="sp2">2×</span></div></div>
+                </div>
+                <div class="warning-text" id="warningText">⚠️ 请将进度拉到100%完成接触面平衡建立，即可解锁外加偏压。</div>
+            </div>`;
+
+            const bind = (id, prop, transform, displayId) => {
+                document.getElementById(id).addEventListener('input', function() {
+                    const val = transform ? transform(this.value) : this.value;
+                    state[prop] = val;
+                    if (displayId && typeof val === 'number') document.getElementById(displayId).textContent = formatDoping(val).replace(' cm⁻³','');
+                    if (id==='stage') {
+                        const stageVal = parseFloat(val);
+                        document.getElementById('stageVal').textContent = Math.round(stageVal*100)+'%';
+                        const biasSlider = document.getElementById('bias');
+                        if (stageVal<1.0) {
+                            biasSlider.disabled = true; state.bias = 0; document.getElementById('bias').value = 0;
+                            document.getElementById('biasVal').textContent = '0.00 V';
+                            document.getElementById('warningText').style.display = 'block';
+                        } else {
+                            biasSlider.disabled = false;
+                            var wt = document.getElementById('warningText'); if(wt) wt.style.display = 'none';
+                        }
+                    }
+                    if (id==='bias') document.getElementById('biasVal').textContent = parseFloat(val).toFixed(2)+' V';
+                    if (id==='temp') document.getElementById('tempVal').textContent = val;
+                    updateBadge();
+                });
+            };
+            bind('leftMat','leftMat'); bind('leftType','leftType'); bind('leftDoping','leftDoping', v=>Math.pow(10,v), 'leftDopingDisp');
+            bind('rightMat','rightMat'); bind('rightType','rightType'); bind('rightDoping','rightDoping', v=>Math.pow(10,v), 'rightDopingDisp');
+            bind('temp','temp',parseInt); bind('stage','stage',parseFloat); bind('bias','bias',parseFloat);
+
+            document.getElementById('sp05').addEventListener('click', ()=>setSpeed(0.5,'sp05'));
+            document.getElementById('sp1').addEventListener('click', ()=>setSpeed(1.0,'sp1'));
+            document.getElementById('sp2').addEventListener('click', ()=>setSpeed(2.0,'sp2'));
+
+            function updateBadge() {
+                document.getElementById('junction-badge').textContent = `${state.leftType.toUpperCase()}-${state.rightType.toUpperCase()} ${isHomojunction()?'同质结':'异质结'}`;
+            }
             updateBadge();
-            resize();
-            initParticles();
-            loop();
+        }
+
+        const bandCanvas = document.getElementById('bandCanvas'); const bandCtx = bandCanvas.getContext('2d');
+        const ivCanvas = document.getElementById('ivCanvas'); const ivCtx = ivCanvas.getContext('2d');
+        let lastTime = performance.now();
+
+        function resizeCanvases() {
+            [bandCanvas, ivCanvas].forEach(canvas => {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.parentElement.getBoundingClientRect();
+                const cw = rect.width;
+                const ch = rect.height || 320;
+                
+                canvas.width = cw * dpr;
+                canvas.height = ch * dpr;
+                canvas.style.width = cw + 'px';
+                canvas.style.height = ch + 'px';
+                
+                const ctx = canvas.getContext('2d');
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            });
+        }
+
+        function animate(now) {
+            const dt = Math.min(0.1, (now-lastTime)/1000); lastTime = now;
+            updateParticles(dt);
+            drawBand(bandCanvas, bandCtx);
+            drawIv(ivCanvas, ivCtx);
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = () => { 
+            buildControls(); 
+            resizeCanvases(); 
+            window.addEventListener('resize', resizeCanvases);
+            requestAnimationFrame(animate); 
         };
+    })();
     </script>
 </body>
 </html>
