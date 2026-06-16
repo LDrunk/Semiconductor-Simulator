@@ -5,116 +5,343 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>能带演变与仿真系统</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * {
+            margin: 0; 
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: #0a0e17;
             font-family: 'Segoe UI', system-ui, 'PingFang SC', sans-serif;
             padding: 20px;
             color: #e2e8f0;
-            display: flex; justify-content: center;
+            display: flex;
+            justify-content: center;
         }
-        .main-container { width:100%; max-width:1400px; display:flex; flex-direction:column; gap:16px; }
+
+        .main-container {
+            width: 100%;
+            max-width: 1400px;                 
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
         .header {
-            background:#111827; padding:14px 24px; border-radius:12px;
-            border:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;
+            background: #111827;
+            padding: 14px 24px;
+            border-radius: 12px;             
+            border: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .header h1 {
-            font-size:1.4rem; font-weight:700;
+            font-size: 1.4rem;
+            font-weight: 700;
+            /* 渐变色文字，使用 background-clip 实现 */
             background: linear-gradient(135deg, #38bdf8, #a78bfa);
-            background-clip: text; -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent; color: transparent;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
         }
-        .badge { background:#0f172a; border:1px solid #334155; padding:6px 14px; border-radius:6px; font-size:0.85rem; color:#94a3b8; }
-        
-        .twin-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
-        
-        .chart-grid { display:grid; grid-template-columns: 1.25fr 0.75fr; gap:16px; }
-        
-        @media (max-width:950px) { 
-            .twin-grid { grid-template-columns:1fr; } 
-            .chart-grid { grid-template-columns:1fr; }
+        .badge {
+            background: #0f172a; 
+            border: 1px solid #334155;
+            padding: 6px 14px; 
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #94a3b8;
         }
-        
+
+        .twin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1.25fr 0.75fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 950px) {
+            .twin-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .canvas-card {
-            background:#0f172a; border-radius:12px; border:1px solid #1e293b;
-            overflow:hidden; display:flex; flex-direction:column;
+            background: #0f172a;
+            border-radius: 12px;
+            border: 1px solid #1e293b;
+            overflow: hidden;                 
+            display: flex;
+            flex-direction: column;
         }
         .canvas-card .card-label {
-            padding:10px 14px; font-size:0.8rem; font-weight:600; color:#94a3b8;
-            background:#111827; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+            background: #111827;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
         }
-        .canvas-card .card-label span { color: #38bdf8; font-weight: normal; font-size: 0.75rem;}
-        
-        .canvas-wrap { flex:1; position:relative; width: 100%; min-height: 320px; height: 320px; }
-        canvas { display:block; width:100%; height:100%; }
-        
-        .info-bar { display:flex; justify-content:space-between; padding:6px 14px; font-size:0.7rem; color:#64748b; background:#0f172a; border-top:1px solid #1e293b; }
-        
+        .canvas-card .card-label span {
+            color: #38bdf8;
+            font-weight: normal;
+            font-size: 0.75rem;
+        }
+        .canvas-wrap {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            min-height: 320px; 
+            height: 320px;
+        }
+        canvas {
+            display: block; 
+            width: 100%;
+            height: 100%;
+        }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 14px;
+            font-size: 0.7rem;
+            color: #64748b;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+        }
+
         .control-panel {
-            background:#111827; border:1px solid #1e293b; border-radius:12px; padding:16px;
-            display:flex; flex-direction:column; gap:14px;
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
-        .panel-section { background:#0f172a; border-radius:8px; padding:12px; border:1px solid #1e293b; display: flex; flex-direction: column; }
-        .panel-section h3 { font-size:0.85rem; font-weight:600; color:#38bdf8; margin-bottom:10px; border-left:3px solid #38bdf8; padding-left:8px; }
-        
-        .config-block-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width:550px) { .config-block-wrapper { grid-template-columns: 1fr; } }
-        
-        .mat-config-block { display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.01); padding: 8px; border-radius: 6px; border: 1px dashed #1e293b;}
-        .mat-top-row { display: flex; gap: 8px; } 
-        .mat-bottom-row { display: flex; flex-direction: column; gap: 4px; } 
-        
-        .control-row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
-        .control-row .control-item { flex:1 1 110px; display:flex; flex-direction:column; gap:4px; }
+        .panel-section {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-section h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #38bdf8;
+            margin-bottom: 10px;
+            border-left: 3px solid #38bdf8;
+            padding-left: 8px;
+        }
+
+        .config-block-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 550px) {
+            .config-block-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+        .mat-config-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.01);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px dashed #1e293b;
+        }
+        .mat-top-row {
+            display: flex;
+            gap: 8px;
+        }
+        .mat-bottom-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .control-row .control-item {
+            flex: 1 1 110px; 
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
         .control-item label {
-            font-size:0.7rem; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;
-            display:flex; justify-content:space-between; align-items:baseline;
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
         }
-        .doping-value { font-weight:600; color:#cbd5e1; font-size:0.75rem; }
-        
-        select, input[type="range"] {
-            background:#1e293b; border:1px solid #334155; color:#e2e8f0;
-            padding:6px 8px; border-radius:6px; font-size:0.8rem; outline:none; font-family:inherit; width: 100%;
+        .doping-value {
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 0.75rem;
         }
-        input[type="range"] { appearance:none; -webkit-appearance:none; height:4px; padding:0; background:#334155; cursor:pointer; border-radius:2px; width: 100%; }
-        input[type="range"]::-moz-range-track { height:4px; background:#334155; border-radius:2px; }
-        input[type="range"]::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:#38bdf8; border:none; cursor:pointer; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#38bdf8; border:none; margin-top:-6px; }
-        input[type="range"]::-webkit-slider-runnable-track { height:4px; background:#334155; border-radius:2px; }
-        input[type="range"]:disabled { opacity:0.3; cursor:not-allowed; }
-        
-        .btn-group { display:flex; gap:4px; width: 100%; }
-        .btn { flex:1; text-align:center; background:#1e293b; border:1px solid #334155; color:#cbd5e1; padding:5px 10px; border-radius:6px; font-size:0.75rem; cursor:pointer; transition:0.2s; }
-        .btn.active { background:#38bdf8; color:#0f172a; font-weight:bold; border-color:#38bdf8; }
-        
-        .warning-text { color:#facc15; font-size:0.75rem; text-align:center; margin-top:4px; padding:6px; background:rgba(250,204,21,0.08); border-radius:6px; }
-        
-        /* 参数表 */
-        .param-table { width:100%; font-size:0.8rem; border-collapse:collapse; margin-top:4px; }
-        .param-table tr { transition: background 0.2s; }
-        .param-table tr:hover { background: rgba(255,255,255,0.02); }
-        .param-table td { padding:9px 8px; border-bottom:1px solid #1e293b; color:#cbd5e1; }
-        .param-table td:nth-child(odd) { color:#94a3b8; width:28%; } 
-        .param-table td:nth-child(even) { font-weight: 600; color:#38bdf8; width:22%; } 
-        .param-table td[colspan="3"] { width: 72%; }
+
+        select,
+        input[type="range"] {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            outline: none;
+            font-family: inherit;
+            width: 100%;
+        }
+        input[type="range"] {
+            appearance: none;
+            -webkit-appearance: none;
+            height: 4px;
+            padding: 0;
+            background: #334155;
+            cursor: pointer;
+            border-radius: 2px;
+            width: 100%;
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            border: none;
+            margin-top: -6px; 
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+        }
+        input[type="range"]:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+        }
+        .btn {
+            flex: 1;
+            text-align: center;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn.active {
+            background: #38bdf8;
+            color: #0f172a;
+            font-weight: bold;
+            border-color: #38bdf8;
+        }
+
+        .warning-text {
+            color: #facc15;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 4px;
+            padding: 6px;
+            background: rgba(250, 204, 21, 0.08);
+            border-radius: 6px;
+        }
+
+        .param-table {
+            width: 100%;
+            font-size: 0.8rem;
+            border-collapse: collapse;
+            margin-top: 4px;
+        }
+        .param-table tr {
+            transition: background 0.2s;
+        }
+        .param-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .param-table td {
+            padding: 9px 8px;
+            border-bottom: 1px solid #1e293b;
+            color: #cbd5e1;
+        }
+        .param-table td:nth-child(odd) {
+            color: #94a3b8; 
+            width: 28%;
+        }
+        .param-table td:nth-child(even) {
+            font-weight: 600;
+            color: #38bdf8; 
+            width: 22%;
+        }
+        .param-table td[colspan="3"] {
+            width: 72%;
+        }
     </style>
 </head>
 <body>
     <div class="main-container">
         <div class="header">
             <h1>⚡ 半导体异质结能带与特性仿真系统</h1>
-            <div class="badge" id="junction-badge">同质/异质结</div>
+            <div class="badge" id="junction-badge">同质/异质结</div> 
         </div>
-        
+
         <div class="twin-grid">
             <div class="control-panel" id="controlPanel"></div>
-            
+
             <div class="canvas-card" style="padding:16px;">
                 <div style="font-size:0.85rem; font-weight:600; color:#38bdf8; margin-bottom:8px; border-left:3px solid #38bdf8; padding-left:8px;">📋 实时演算物理参数</div>
                 <table class="param-table" id="paramTable">
                     <tr><td>左侧材料</td><td id="p-leftMat">-</td><td>右侧材料</td><td id="p-rightMat">-</td></tr>
                     <tr><td>左侧带隙 Eg</td><td id="p-leftEg">-</td><td>右侧带隙 Eg</td><td id="p-rightEg">-</td></tr>
                     <tr><td>左侧亲和能 χ</td><td id="p-leftChi">-</td><td>右侧亲和能 χ</td><td id="p-rightChi">-</td></tr>
+                    <tr><td>左侧功函数 Φ</td><td id="p-leftWf">-</td><td>右侧功函数 Φ</td><td id="p-rightWf">-</td></tr>
                     <tr><td>平衡费米能级 Ef</td><td id="p-ef-avg" colspan="3">-</td></tr>
                     <tr><td>内建电势 Vbi</td><td id="p-Vbi">-</td><td>接触电势差 Vd</td><td id="p-Vd">-</td></tr>
                     <tr><td>当前势垒高度</td><td id="p-barrier">-</td><td>当前耗尽层总宽</td><td id="p-W">-</td></tr>
@@ -128,7 +355,6 @@
                 <div class="canvas-wrap"><canvas id="bandCanvas"></canvas></div>
                 <div class="info-bar" id="band-info">势垒 | 耗尽宽度</div>
             </div>
-            
             <div class="canvas-card">
                 <div class="card-label">📈 I‑V 特性曲线 <span id="iv-state-text">工作点映射</span></div>
                 <div class="canvas-wrap"><canvas id="ivCanvas"></canvas></div>
@@ -138,306 +364,403 @@
     </div>
 
     <script>
-    (function () {
-        const mats = {
-            'Si':   { eg:1.12, chi:4.05, nc:2.8e19, nv:1.0e19, eps:11.7, ni300:1.5e10, mun:1350, mup:480 },
-            'Ge':   { eg:0.66, chi:3.65, nc:1.04e19, nv:6.0e18, eps:16.0, ni300:2.4e13, mun:3900, mup:1900 },
-            'GaAs': { eg:1.42, chi:4.45, nc:4.7e17, nv:7.0e18, eps:13.1, ni300:1.8e6, mun:8000, mup:400 }
-        };
-        const q = 1.602e-19, k = 1.38e-23, eps0 = 8.854e-12, k_eV = 8.617333e-5;
-
-        const state = {
-            leftMat: 'GaAs', leftType: 'p', leftDoping: 1e16,
-            rightMat: 'Si', rightType: 'n', rightDoping: 1e16,
-            temp: 300, bias: 0.0, stage: 0.0, speed: 1.0
-        };
-        const particles = [];
-        const isHomojunction = () => state.leftMat === state.rightMat;
-
-        function formatDoping(val) {
-            if (val >= 1e18) return (val/1e18).toFixed(1)+'×10¹⁸';
-            if (val >= 1e17) return (val/1e17).toFixed(1)+'×10¹⁷';
-            if (val >= 1e16) return (val/1e16).toFixed(1)+'×10¹⁶';
-            if (val >= 1e15) return (val/1e15).toFixed(1)+'×10¹⁵';
-            return (val/1e14).toFixed(1)+'×10¹⁴';
-        }
-
-        function calcPhysics() {
-            const L = mats[state.leftMat], R = mats[state.rightMat];
-            const Vt = (k * state.temp) / q;
-            const computeEf = (mat, type, doping) => {
-                const midGap = -mat.chi - mat.eg/2;
-                const shift = type==='n' ? Vt*Math.log(mat.nc/doping)*0.6 : -Vt*Math.log(mat.nv/doping)*0.6;
-                return midGap + shift;
+        (function () {
+            //基本参数
+            const mats = {
+                'Si':   { eg:1.12, chi:4.05, nc:2.8e19, nv:1.0e19, eps:11.7, ni300:1.5e10, mun:1350, mup:480 },
+                'Ge':   { eg:0.66, chi:3.65, nc:1.04e19, nv:6.0e18, eps:16.0, ni300:2.4e13, mun:3900, mup:1900 },
+                'GaAs': { eg:1.42, chi:4.45, nc:4.7e17, nv:7.0e18, eps:13.1, ni300:1.8e6, mun:8000, mup:400 }
             };
-            const ef1 = computeEf(L, state.leftType, state.leftDoping);
-            const ef2 = computeEf(R, state.rightType, state.rightDoping);
-            const Vd = ef1 - ef2;
-            const Vtotal = Math.abs(Vd - state.bias);
-            const eps1 = L.eps*eps0, eps2 = R.eps*eps0;
-            const n1 = state.leftDoping*1e6, n2 = state.rightDoping*1e6;
-            const V1 = Vtotal * (eps2*n2) / (eps1*n1 + eps2*n2);
-            const V2 = Vtotal * (eps1*n1) / (eps1*n1 + eps2*n2);
-            const x1 = Math.sqrt((2*eps1*V1)/(q*n1))*1e9;
-            const x2 = Math.sqrt((2*eps2*V2)/(q*n2))*1e9;
-            const W = x1 + x2;
-            const Vbi = isHomojunction()
-                ? (k_eV*state.temp)*Math.log(state.leftDoping*state.rightDoping /
-                    Math.pow(L.ni300*Math.pow(state.temp/300,1.5)*Math.exp(-L.eg/(2*k_eV*state.temp)+L.eg/(2*k_eV*300)),2))
-                : Vd;
-            return { L, R, ef1, ef2, Vd, Vbi, V1, V2, x1, x2, W };
-        }
+            //物理常量
+            const q = 1.602e-19,    // 元电荷 (库仑)
+                k = 1.38e-23,       // 玻尔兹曼常数 (J/K)
+                eps0 = 8.854e-12,   // 真空介电常数 (F/m)
+                k_eV = 8.617333e-5; // 玻尔兹曼常数 (eV/K)
 
-        function updateParticles(dt) {
-            const ph = calcPhysics();
-            const rate = 4*(1+Math.abs(ph.Vd - state.bias)*0.3)*state.speed;
-            if (particles.length < 60 && Math.random() < rate*dt) {
-                const left = Math.random()<0.5;
-                particles.push({
-                    left, type: left ? (state.leftType==='p'?'h':'e') : (state.rightType==='p'?'h':'e'),
-                    x_rel:Math.random(), y_off:(Math.random()-0.5)*20,
-                    vx:0.004+Math.random()*0.009, life:1.0
+            //可调参数状态
+            const state = {
+                leftMat: 'GaAs',    // 左侧材料名称
+                leftType: 'p',      // 左侧掺杂类型 'p' 或 'n'
+                leftDoping: 1e16,   // 左侧掺杂浓度 (cm⁻³)
+                rightMat: 'Si',     // 右侧材料名称
+                rightType: 'n',     // 右侧掺杂类型
+                rightDoping: 1e16,  // 右侧掺杂浓度
+                temp: 300,          // 温度 (K)
+                bias: 0.0,          // 外加偏压 (V)
+                stage: 0.0,         // 接触建立进度 0~1
+                speed: 1.0          // 微观粒子运动速度倍率
+            };
+            const particles = [];
+
+            //判断是否为同质结
+            const isHomojunction = () => state.leftMat === state.rightMat;
+
+            //掺杂浓度格式化
+            function formatDoping(val) {
+                if (val >= 1e18) return (val/1e18).toFixed(1)+'×10¹⁸';
+                if (val >= 1e17) return (val/1e17).toFixed(1)+'×10¹⁷';
+                if (val >= 1e16) return (val/1e16).toFixed(1)+'×10¹⁶';
+                if (val >= 1e15) return (val/1e15).toFixed(1)+'×10¹⁵';
+                return (val/1e14).toFixed(1)+'×10¹⁴';
+            }
+
+            //核心物理量计算
+            function calcPhysics() {
+                const L = mats[state.leftMat],
+                    R = mats[state.rightMat];
+                const Vt_eV = k_eV * state.temp; // 热电压 (eV)
+
+                //计算某侧材料的费米能级 (eV)
+                const computeEf = (mat, type, doping) => {
+                    const Ec = -mat.chi;          // 导带底能量 (相对于真空能级)
+                    const Ev = -mat.chi - mat.eg; // 价带顶能量
+                    if (type === 'n') {
+                        // N型：Ef = Ec - kT * ln(Nc/Nd)
+                        return Ec - Vt_eV * Math.log(mat.nc / doping);
+                    } else {
+                        // P型：Ef = Ev + kT * ln(Nv/Na)
+                        return Ev + Vt_eV * Math.log(mat.nv / doping);
+                    }
+                };
+
+                const ef1 = computeEf(L, state.leftType, state.leftDoping);   // 左侧费米能级
+                const ef2 = computeEf(R, state.rightType, state.rightDoping); // 右侧费米能级
+                const wf1 = -ef1;            // 左侧功函数 (eV)
+                const wf2 = -ef2;            // 右侧功函数
+                const Vd = ef1 - ef2;        // 接触电势差 (V) = 左侧Ef - 右侧Ef
+
+                const Vbi = Math.abs(Vd);
+                // 当前势垒高度：内建电势减去外加偏压（正向偏压降低势垒）
+                const barrier = Vbi - state.bias;
+
+                //=耗尽层宽度计算（基于耗尽近似)
+                const deltaV = Vd + state.bias;   // 总电势差（内建+外偏，带符号）
+                const Vtotal = Math.abs(deltaV);  // 绝对值
+                const eps1 = L.eps*eps0, eps2 = R.eps*eps0;
+                const n1 = state.leftDoping*1e6, n2 = state.rightDoping*1e6; // 转为 m⁻³
+                // 两侧分压（非对称结）
+                const V1 = Vtotal * (eps2*n2) / (eps1*n1 + eps2*n2);
+                const V2 = Vtotal * (eps1*n1) / (eps1*n1 + eps2*n2);
+                // 耗尽宽度 (m) 并转为 nm
+                const x1 = Math.sqrt((2*eps1*V1)/(q*n1))*1e9;
+                const x2 = Math.sqrt((2*eps2*V2)/(q*n2))*1e9;
+                const W = x1 + x2;               // 总耗尽层宽度 (nm)
+
+                // 返回所有计算值
+                return { L, R, ef1, ef2, wf1, wf2, Vd, Vbi, barrier, V1, V2, x1, x2, W, deltaV, Vt_eV };
+            }
+
+            //微观载流子动画
+            function updateParticles(dt) {
+                const ph = calcPhysics();
+                // 粒子生成速率：与偏压大小和速度倍率有关
+                const rate = 4*(1+Math.abs(ph.Vd - state.bias)*0.3)*state.speed;
+                if (particles.length < 60 && Math.random() < rate*dt) {
+                    const left = Math.random()<0.5; // 随机决定从哪一侧产生
+                    particles.push({
+                        left,   //true表示从左侧产生
+                        type: left ? (state.leftType==='p'?'h':'e') : (state.rightType==='p'?'h':'e'),
+                        x_rel:Math.random(), y_off:(Math.random()-0.5)*20,
+                        vx:0.004+Math.random()*0.009,
+                        life:1.0
+                    });
+                }
+                // 更新每个粒子的位置和寿命
+                for (let i=particles.length-1; i>=0; i--) {
+                    const p = particles[i];
+                    let drive = 0;
+                    // 如果接触已经建立且偏压不为零，增加驱动力（电场作用）
+                    if (state.stage>=0.98) drive = state.bias > 0 ? -state.bias*0.25 : -state.bias*0.02;
+                    const mv = p.vx + drive*0.005;
+                    // 电子向右移动，空穴向左移动
+                    if (p.type==='e') p.x_rel += mv*state.speed*dt*8;
+                    else p.x_rel -= mv*state.speed*dt*8;
+                    if (p.x_rel>1.1) p.x_rel=0;
+                    if (p.x_rel<-0.1) p.x_rel=1;
+                    p.life -= dt*0.2;
+                    if (p.life<=0) particles.splice(i,1);
+                }
+            }
+
+            //绘制能带图
+            function drawBand(canvas, ctx) {
+                const cw = canvas.width / (window.devicePixelRatio || 1);
+                const ch = canvas.height / (window.devicePixelRatio || 1);
+                ctx.clearRect(0,0,cw,ch);
+                const midX = cw/2;
+                const ph = calcPhysics();        // 计算当前物理量
+                const { L, R, Vd, deltaV, V1, V2, x1, x2, W, ef1, ef2, barrier } = ph;
+
+                //能带弯曲计算
+                const E0_L = 0;                    // 左侧真空能级参考
+                const E0_R = E0_L + deltaV * state.stage; // 右侧真空能级，随接触进度和偏压变化
+                const signΔ = deltaV >= 0 ? 1 : -1;
+                const totalVis = Math.min(130, cw*0.35); // 耗尽层最大显示宽度
+                const dwL = W>0 ? (totalVis*(x1/W))*state.stage : 0; // 左侧耗尽层显示宽度
+                const dwR = W>0 ? (totalVis*(x2/W))*state.stage : 0; // 右侧耗尽层显示宽度
+                const E0_int = E0_L + signΔ * V1 * state.stage; // 界面处真空能级
+
+                // 计算x处真空能级 E0(x) (抛物线近似)
+                const getE0 = (x) => {
+                    if (x < midX - dwL) return E0_L;
+                    if (x > midX + dwR) return E0_R;
+                    if (x < midX) {
+                        const t = (x - (midX - dwL)) / (dwL || 1);
+                        return E0_L + (E0_int - E0_L) * t * t;
+                    } else {
+                        const t = ((midX + dwR) - x) / (dwR || 1);
+                        return E0_R + (E0_int - E0_R) * t * t;
+                    }
+                };
+
+                // 收集所有能量值以便确定纵轴范围
+                const allEnergies = [];
+                for (let x = 0; x <= cw; x += 10) {
+                    const e0 = getE0(x);
+                    const mat = x < midX ? L : R;
+                    allEnergies.push(e0, e0 - mat.chi, e0 - mat.chi - mat.eg);
+                }
+                allEnergies.push(ef1, ef2);
+                const eMin = Math.min(...allEnergies) - 0.3;
+                const eMax = Math.max(...allEnergies) + 0.3;
+                const scale = ch * 0.65 / (eMax - eMin);  // 能量到像素的缩放
+                const toY = (energy) => ch * 0.82 - (energy - eMin)*scale; // 能量转y坐标
+
+                // 背景网格
+                ctx.strokeStyle='#1e293b'; ctx.lineWidth=0.5;
+                for(let i=0;i<=6;i++){ 
+                    const y=ch*0.12+i*(ch*0.65)/6; 
+                    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); 
+                }
+
+                // 真空能级 E0
+                ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+                ctx.beginPath();
+                for(let x=0;x<cw;x+=4){ 
+                    let y=toY(getE0(x)); 
+                    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y); 
+                }
+                ctx.stroke(); ctx.setLineDash([]);
+
+                // 费米能级
+                const isEquilibrium = (state.stage >= 1.0 && Math.abs(state.bias) < 0.001);
+                const ef_eq = ef1;  // 平衡时两侧费米能级相等，取左侧值
+
+                if (isEquilibrium) {
+                    // 平衡状态
+                    ctx.strokeStyle='#3b82f6'; ctx.lineWidth=2.2; ctx.setLineDash([5,4]);
+                    const yEf = toY(ef_eq);
+                    ctx.beginPath(); ctx.moveTo(0,yEf); ctx.lineTo(cw,yEf); ctx.stroke(); ctx.setLineDash([]);
+                    ctx.fillStyle='#3b82f6'; ctx.font='bold 11px sans-serif'; ctx.textAlign='start';
+                    ctx.fillText('Ef (平衡)', 10, yEf - 8);
+                } else if (state.stage < 0.01) {
+                    // 未接触：两侧各自费米能级
+                    ctx.strokeStyle='#3b82f6'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+                    const yEfL = toY(ef1), yEfR = toY(ef2);
+                    ctx.beginPath(); ctx.moveTo(0, yEfL); ctx.lineTo(midX, yEfL); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(midX, yEfR); ctx.lineTo(cw, yEfR); ctx.stroke(); ctx.setLineDash([]);
+                    ctx.fillStyle='#3b82f6'; ctx.font='10px sans-serif';
+                    ctx.textAlign='start'; ctx.fillText('Ef,L', 8, yEfL - 6);
+                    ctx.textAlign='end'; ctx.fillText('Ef,R', cw - 8, yEfR - 6);
+                    ctx.textAlign='start';
+                } else {
+                    // 过渡或偏压状态：两侧准费米能级
+                    const baseEfR = ef2 + (ef1 - ef2) * state.stage;
+                    let efL_disp, efR_disp;
+                    if (state.stage >= 1.0 && Math.abs(state.bias) > 0.001) {
+                        // 偏压下，左侧Efp保持平衡值，右侧Efn = Ef_eq + bias
+                        efL_disp = ef_eq;
+                        efR_disp = ef_eq + state.bias;
+                    } else {
+                        efL_disp = ef_eq;
+                        efR_disp = baseEfR;
+                    }
+                    ctx.strokeStyle='#3b82f6'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+                    const yEfL = toY(efL_disp), yEfR = toY(efR_disp);
+                    ctx.beginPath(); ctx.moveTo(0, yEfL); ctx.lineTo(midX, yEfL); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(midX, yEfR); ctx.lineTo(cw, yEfR); ctx.stroke(); ctx.setLineDash([]);
+                    if (state.stage >= 1.0) {
+                        ctx.fillStyle='#facc15'; ctx.font='bold 10px sans-serif';
+                        ctx.textAlign='start'; ctx.fillText('Efp', 8, yEfL - 6);
+                        ctx.textAlign='end'; ctx.fillText('Efn', cw - 8, yEfR - 6);
+                        ctx.textAlign='start';
+                    }
+                }
+
+                // 导带底 Ec 和价带顶 Ev 
+                const drawEcEv = (side) => {
+                    const mat = side==='L'?L:R; const startX = side==='L'?0:midX; const endX = side==='L'?midX:cw;
+                    ctx.lineWidth=2.8;
+                    // Ec
+                    ctx.strokeStyle='#ef4444'; ctx.beginPath();
+                    for(let x=startX;x<=endX;x+=3){ 
+                        const adj=20;
+                        const y=toY(getE0(x)-mat.chi)-adj; 
+                        x===startX?ctx.moveTo(x,y):ctx.lineTo(x,y); 
+                    }
+                    ctx.stroke();
+                    // Ev
+                    ctx.strokeStyle='#10b981'; ctx.beginPath();
+                    for(let x=startX;x<=endX;x+=3){ 
+                        const adj=20;
+                        const y=toY(getE0(x)-mat.chi-mat.eg)+adj;
+                        x===startX?ctx.moveTo(x,y):ctx.lineTo(x,y); 
+                    }
+                    ctx.stroke();
+                };
+                drawEcEv('L'); drawEcEv('R');
+                /* if (isHomojunction() && state.stage > 0.01) {
+                    ctx.lineWidth=2.8;
+                    ctx.strokeStyle='#ef4444'; ctx.beginPath(); ctx.moveTo(midX-2, toY(getE0(midX-2)-L.chi)); ctx.lineTo(midX+2, toY(getE0(midX+2)-R.chi)); ctx.stroke();
+                    ctx.strokeStyle='#10b981'; ctx.beginPath(); ctx.moveTo(midX-2, toY(getE0(midX-2)-L.chi-L.eg)); ctx.lineTo(midX+2, toY(getE0(midX+2)-R.chi-R.eg)); ctx.stroke();
+                } */
+
+                //耗尽层
+                if (dwL>0||dwR>0) {
+                    const leftEdge=midX-dwL, rightEdge=midX+dwR;
+                    ctx.fillStyle='rgba(255,180,100,0.1)'; ctx.fillRect(leftEdge,0,dwL+dwR,ch);
+                    ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.2; ctx.setLineDash([4,4]);
+                    ctx.beginPath(); ctx.moveTo(leftEdge,0); ctx.lineTo(leftEdge,ch); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(rightEdge,0); ctx.lineTo(rightEdge,ch); ctx.stroke(); ctx.setLineDash([]);
+                    ctx.fillStyle='#f59e0b'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+                    ctx.fillText('耗尽层', (leftEdge+rightEdge)/2, ch*0.14);
+                }
+
+                // 界面中心竖线
+                ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+                ctx.beginPath(); ctx.moveTo(midX,0); ctx.lineTo(midX,ch); ctx.stroke(); ctx.setLineDash([]);
+
+                //微观粒子（载流子）
+                particles.forEach(p => {
+                    const px = p.left ? p.x_rel*midX : midX + p.x_rel*(cw-midX);
+                    const e0 = getE0(px); const mat = px<midX ? L : R;
+                    // 电子在导带底附近，空穴在价带顶附近
+                    const py = p.type==='e' ? toY(e0-mat.chi)-4 : toY(e0-mat.chi-mat.eg)+4;
+                    ctx.fillStyle = p.type==='e'?'#60a5fa':'#f43f5e';
+                    ctx.beginPath(); ctx.arc(px,py,3,0,Math.PI*2); ctx.fill();
+                    ctx.font = '13px sans-serif'; ctx.fillText(p.type==='e' ? 'e⁻' : 'h⁺', px + 5, py + 3);
+                });
+
+                // 标注 E0, Ec, Ev 的文字
+                ctx.fillStyle='#64748b'; ctx.font='10px sans-serif'; ctx.textAlign = 'start';
+                ctx.fillText('E₀', 10, toY(E0_L)-6);
+                ctx.fillText('Ec', 10, toY(E0_L - L.chi)-6);
+                ctx.fillText('Ev', 10, toY(E0_L - L.chi - L.eg)+12);
+
+                // 更新底部信息栏
+                document.getElementById('band-info').innerHTML = `势垒高度: ${barrier.toFixed(3)} eV | 宽度: ${(W*state.stage).toFixed(1)} nm`;
+                const bandStateEl = document.getElementById('band-state-text');
+                if (state.stage === 0) bandStateEl.textContent = '独立能带';
+                else if (state.stage < 1) bandStateEl.textContent = '接触演变中';
+                else if (Math.abs(state.bias) < 0.001) bandStateEl.textContent = '热平衡建立';
+                else bandStateEl.textContent = '加压非平衡';
+
+                // 更新参数表格
+                updateParamPanel(ph, ef_eq);
+            }
+
+            //更新参数表格显示
+            function updateParamPanel(ph, efBalance) {
+                document.getElementById('p-leftMat').textContent = state.leftMat + ` (${state.leftType.toUpperCase()})`;
+                document.getElementById('p-rightMat').textContent = state.rightMat + ` (${state.rightType.toUpperCase()})`;
+                document.getElementById('p-leftEg').textContent = ph.L.eg.toFixed(2)+' eV';
+                document.getElementById('p-rightEg').textContent = ph.R.eg.toFixed(2)+' eV';
+                document.getElementById('p-leftChi').textContent = ph.L.chi.toFixed(2)+' eV';
+                document.getElementById('p-rightChi').textContent = ph.R.chi.toFixed(2)+' eV';
+                document.getElementById('p-leftWf').textContent = ph.wf1.toFixed(2)+' eV';
+                document.getElementById('p-rightWf').textContent = ph.wf2.toFixed(2)+' eV';
+                document.getElementById('p-ef-avg').textContent = efBalance.toFixed(3)+' eV';
+                document.getElementById('p-Vbi').textContent = ph.Vbi.toFixed(3)+' V';
+                document.getElementById('p-Vd').textContent = ph.Vd.toFixed(3)+' V';
+                document.getElementById('p-barrier').textContent = ph.barrier.toFixed(3)+' eV';
+                document.getElementById('p-W').textContent = (ph.W*state.stage).toFixed(2)+' nm';
+            }
+
+            // I-V 特性曲线
+            function drawIv(canvas, ctx) {
+                const cw = canvas.width / (window.devicePixelRatio || 1);
+                const ch = canvas.height / (window.devicePixelRatio || 1);
+                ctx.clearRect(0, 0, cw, ch);
+                const pL = 50, pR = 20, pT = 20, pB = 32;
+                const plotW = cw - pL - pR, plotH = ch - pT - pB;
+                // I-V 模型参数（理想二极管模型）
+                const Vt_vis = 0.12, I0 = 0.005;
+                const refV = Math.max(0.5, Math.abs(state.bias));
+                const maxI = I0 * (Math.exp(refV / Vt_vis) - 1);
+                const scaleI = Math.max(maxI * 1.25, 0.01);
+                const vMin = -2, vMax = 2;          // 电压显示范围
+                const toX = v => pL + ((v - vMin) / (vMax - vMin)) * plotW;
+                const zeroX = toX(0), zeroY = pT + plotH * 0.8; // 零电流线位置
+                const toY = cur => zeroY - (cur / scaleI) * (plotH * 0.8);
+
+                // 绘制网格及刻度标签
+                ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                for (let v = -2; v <= 2; v++) {
+                    const px = toX(v);
+                    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.5;
+                    ctx.beginPath(); ctx.moveTo(px, pT); ctx.lineTo(px, ch - pB); ctx.stroke();
+                    if (v !== 0) ctx.fillText(v, px, zeroY + 6);
+                }
+                ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+                const yTicks = [0, scaleI / 2, scaleI];
+                yTicks.forEach(cur => {
+                    const py = toY(cur);
+                    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.5;
+                    ctx.beginPath(); ctx.moveTo(pL, py); ctx.lineTo(cw - pR, py); ctx.stroke();
+                    if (cur > 0 && cur < scaleI * 0.99) {
+                        let label = cur < 0.1 ? (cur * 1000).toFixed(0) + 'mA' : cur.toFixed(2) + 'A';
+                        ctx.fillText(label, zeroX - 6, py);
+                    }
+                });
+                ctx.fillText('0', zeroX - 6, zeroY + 6);
+
+                // 绘制坐标轴 (灰色实线)
+                ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.moveTo(pL, zeroY); ctx.lineTo(cw - pR, zeroY); ctx.stroke(); 
+                ctx.beginPath(); ctx.moveTo(zeroX, pT); ctx.lineTo(zeroX, ch - pB); ctx.stroke(); 
+
+                // 裁剪区域，防止曲线超出
+                ctx.save(); ctx.beginPath(); ctx.rect(pL, pT, plotW, plotH); ctx.clip(); 
+                // 绘制 I-V 曲线 (蓝色)
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.2; ctx.beginPath();
+                let first = true;
+                for (let v = -2; v <= 2; v += 0.02) {
+                    let cur = (v > 0) ? I0 * (Math.exp(v / Vt_vis) - 1) : -I0;
+                    let px = toX(v), py = toY(cur);
+                    first ? (ctx.moveTo(px, py), first = false) : ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+
+                // 如果接触已经建立，绘制当前工作点 (黄色亮点)
+                if (state.stage > 0.9) {
+                    const v = state.bias;
+                    let cur = (v > 0) ? I0 * (Math.exp(v / Vt_vis) - 1) : -I0;
+                    const px = toX(v), py = toY(cur);
+                    ctx.fillStyle = '#facc15'; ctx.shadowBlur = 6; ctx.shadowColor = '#facc15';
+                    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+                    let currentText = Math.abs(cur) < 0.1 ? (cur * 1000).toFixed(1) + ' mA' : cur.toExponential(1) + ' A';
+                    ctx.font = 'bold 10px sans-serif'; ctx.fillStyle = '#facc15';
+                    ctx.textAlign = px > cw - 70 ? 'right' : 'left';
+                    ctx.fillText(` ${v.toFixed(2)}V, ${currentText}`, px > cw - 70 ? px - 8 : px + 8, py - 2);
+                }
+                ctx.restore(); 
+
+                // 更新 I-V 信息栏
+                document.getElementById('iv-info').innerHTML = `当前外加偏压: ${state.bias.toFixed(2)} V`;
+            }
+
+            // 速度切换函数
+            function setSpeed(speed, activeId) {
+                state.speed = speed;
+                ['sp05','sp1','sp2'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if(btn) btn.classList.toggle('active', id===activeId);
                 });
             }
-            for (let i=particles.length-1; i>=0; i--) {
-                const p = particles[i];
-                let drive = 0;
-                if (state.stage>=0.98) drive = state.bias>0 ? state.bias*0.25 : state.bias*0.02;
-                const mv = p.vx + drive*0.005;
-                if (p.type==='e') p.x_rel += mv*state.speed*dt*8;
-                else p.x_rel -= mv*state.speed*dt*8;
-                if (p.x_rel>1.1) p.x_rel=0;
-                if (p.x_rel<-0.1) p.x_rel=1;
-                p.life -= dt*0.2;
-                if (p.life<=0) particles.splice(i,1);
-            }
-        }
 
-        function drawBand(canvas, ctx) {
-            const cw = canvas.width / (window.devicePixelRatio || 1);
-            const ch = canvas.height / (window.devicePixelRatio || 1);
-            ctx.clearRect(0,0,cw,ch);
-            const midX = cw/2;
-            const ph = calcPhysics();
-            const { L, R, Vd, V1, V2, x1, x2, W, ef1, ef2 } = ph;
-            const E0_L = 0;
-            const ΔV_total = Vd - state.bias;
-            const signΔ = ΔV_total >= 0 ? 1 : -1;
-            const E0_R = E0_L - ΔV_total * state.stage;
-            const totalVis = Math.min(130, cw*0.35);
-            const dwL = W>0 ? (totalVis*(x1/W))*state.stage : 0;
-            const dwR = W>0 ? (totalVis*(x2/W))*state.stage : 0;
-            const E0_int = E0_L - signΔ * V1 * state.stage;
-            
-            const getE0 = (x) => {
-                if (x < midX - dwL) return E0_L;
-                if (x > midX + dwR) return E0_R;
-                if (x < midX) {
-                    const t = (x - (midX - dwL)) / (dwL || 1);
-                    return E0_L + (E0_int - E0_L) * t * t;
-                } else {
-                    const t = ((midX + dwR) - x) / (dwR || 1);
-                    return E0_R + (E0_int - E0_R) * t * t;
-                }
-            };
-            const eMin = Math.min(-L.chi-L.eg, -R.chi-R.eg)-0.3;
-            const eMax = Math.max(E0_L, E0_R)+0.3;
-            const scale = ch*0.65/(eMax-eMin);
-            const toY = (energy) => ch*0.82 - (energy-eMin)*scale;
-
-            // 网格
-            ctx.strokeStyle='#1e293b'; ctx.lineWidth=0.5;
-            for(let i=0;i<=6;i++){ const y=ch*0.12+i*(ch*0.65)/6; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
-
-            // 真空能级
-            ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
-            ctx.beginPath();
-            for(let x=0;x<cw;x+=4){ let y=toY(getE0(x)); x===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
-            ctx.stroke(); ctx.setLineDash([]);
-
-            // 费米能级
-            const ef_avg = (ef1 + ef2)/2;
-            const base_efL = ef1 + (ef_avg - ef1) * state.stage;
-            const base_efR = ef2 + (ef_avg - ef2) * state.stage;
-            let efL, efR;
-            if (state.stage >= 1.0 && Math.abs(state.bias) > 0.001) {
-                efL = base_efL - state.bias/2;
-                efR = base_efR + state.bias/2;
-            } else {
-                efL = base_efL;
-                efR = base_efR;
-            }
-            const isEquilibrium = (state.stage >= 1.0 && Math.abs(state.bias) < 0.001);
-
-            ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1.5;
-            if (isEquilibrium) {
-                ctx.setLineDash([5,4]); const yEf = toY(ef_avg);
-                ctx.beginPath(); ctx.moveTo(0,yEf); ctx.lineTo(cw,yEf); ctx.stroke(); ctx.setLineDash([]);
-            } else {
-                ctx.setLineDash([5,4]);
-                ctx.beginPath(); ctx.moveTo(0, toY(efL)); ctx.lineTo(midX, toY(efL)); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(midX, toY(efR)); ctx.lineTo(cw, toY(efR)); ctx.stroke();
-                ctx.setLineDash([]);
-            }
-
-            // 导带与价带
-            const drawEcEv = (side) => {
-                const mat = side==='L'?L:R; const startX = side==='L'?0:midX; const endX = side==='L'?midX:cw;
-                ctx.lineWidth=2.8;
-                ctx.strokeStyle='#ef4444'; ctx.beginPath();
-                for(let x=startX;x<=endX;x+=3){ const y=toY(getE0(x)-mat.chi); x===startX?ctx.moveTo(x,y):ctx.lineTo(x,y); }
-                ctx.stroke();
-                ctx.strokeStyle='#10b981'; ctx.beginPath();
-                for(let x=startX;x<=endX;x+=3){ const y=toY(getE0(x)-mat.chi-mat.eg); x===startX?ctx.moveTo(x,y):ctx.lineTo(x,y); }
-                ctx.stroke();
-            };
-            drawEcEv('L'); drawEcEv('R');
-            if (isHomojunction()) {
-                ctx.lineWidth=2.8;
-                ctx.strokeStyle='#ef4444'; ctx.beginPath(); ctx.moveTo(midX-2, toY(getE0(midX-2)-L.chi)); ctx.lineTo(midX+2, toY(getE0(midX+2)-R.chi)); ctx.stroke();
-                ctx.strokeStyle='#10b981'; ctx.beginPath(); ctx.moveTo(midX-2, toY(getE0(midX-2)-L.chi-L.eg)); ctx.lineTo(midX+2, toY(getE0(midX+2)-R.chi-R.eg)); ctx.stroke();
-            }
-
-            // 耗尽层
-            if (dwL>0||dwR>0) {
-                const leftEdge=midX-dwL, rightEdge=midX+dwR;
-                ctx.fillStyle='rgba(255,180,100,0.1)'; ctx.fillRect(leftEdge,0,dwL+dwR,ch);
-                ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.2; ctx.setLineDash([4,4]);
-                ctx.beginPath(); ctx.moveTo(leftEdge,0); ctx.lineTo(leftEdge,ch); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(rightEdge,0); ctx.lineTo(rightEdge,ch); ctx.stroke(); ctx.setLineDash([]);
-                ctx.fillStyle='#f59e0b'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
-                ctx.fillText('耗尽层', (leftEdge+rightEdge)/2, ch*0.14);
-            }
-
-            // 界面中线
-            ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
-            ctx.beginPath(); ctx.moveTo(midX,0); ctx.lineTo(midX,ch); ctx.stroke(); ctx.setLineDash([]);
-
-            // 粒子渲染
-            particles.forEach(p => {
-                const px = p.left ? p.x_rel*midX : midX + p.x_rel*(cw-midX);
-                const e0 = getE0(px); const mat = px<midX ? L : R;
-                const py = p.type==='e' ? toY(e0-mat.chi)-4 : toY(e0-mat.chi-mat.eg)+4;
-                ctx.fillStyle = p.type==='e'?'#60a5fa':'#f43f5e';
-                ctx.beginPath(); ctx.arc(px,py,3,0,Math.PI*2); ctx.fill();
-                ctx.font = '13px sans-serif'; ctx.fillText(p.type==='e' ? 'e⁻' : 'h⁺', px + 5, py + 3);
-            });
-
-            // 标签文字
-            ctx.fillStyle='#64748b'; ctx.font='10px sans-serif'; ctx.textAlign = 'start';
-            ctx.fillText('E₀', 10, toY(E0_L)-6);
-            ctx.fillText('Ec', 10, toY(E0_L - L.chi)-6);
-            ctx.fillText('Ev', 10, toY(E0_L - L.chi - L.eg)+12);
-
-            document.getElementById('band-info').innerHTML = `势垒高度: ${Math.abs(Vd-state.bias).toFixed(3)} eV | 宽度: ${(W*state.stage).toFixed(1)} nm`;
-            const bandStateEl = document.getElementById('band-state-text');
-            if (state.stage === 0) bandStateEl.textContent = '独立能带';
-            else if (state.stage < 1) bandStateEl.textContent = '接触演变中';
-            else if (Math.abs(state.bias) < 0.001) bandStateEl.textContent = '热平衡建立';
-            else bandStateEl.textContent = '加压非平衡';
-
-            updateParamPanel(ph, ef_avg);
-        }
-
-        function updateParamPanel(ph, efAvg) {
-            document.getElementById('p-leftMat').textContent = state.leftMat + ` (${state.leftType.toUpperCase()})`;
-            document.getElementById('p-rightMat').textContent = state.rightMat + ` (${state.rightType.toUpperCase()})`;
-            document.getElementById('p-leftEg').textContent = ph.L.eg.toFixed(2)+' eV';
-            document.getElementById('p-rightEg').textContent = ph.R.eg.toFixed(2)+' eV';
-            document.getElementById('p-leftChi').textContent = ph.L.chi.toFixed(2)+' eV';
-            document.getElementById('p-rightChi').textContent = ph.R.chi.toFixed(2)+' eV';
-            document.getElementById('p-ef-avg').textContent = efAvg.toFixed(3)+' eV';
-            document.getElementById('p-Vbi').textContent = ph.Vbi.toFixed(3)+' V';
-            document.getElementById('p-Vd').textContent = ph.Vd.toFixed(3)+' V';
-            document.getElementById('p-barrier').textContent = Math.abs(ph.Vd-state.bias).toFixed(3)+' eV';
-            document.getElementById('p-W').textContent = (ph.W*state.stage).toFixed(2)+' nm';
-        }
-
-        function drawIv(canvas, ctx) {
-            const cw = canvas.width / (window.devicePixelRatio || 1);
-            const ch = canvas.height / (window.devicePixelRatio || 1);
-            ctx.clearRect(0, 0, cw, ch);
-
-            const pL = 50, pR = 20, pT = 20, pB = 32;
-            const plotW = cw - pL - pR, plotH = ch - pT - pB;
-            const Vt_vis = 0.12, I0 = 0.005;
-
-            const refV = Math.max(0.5, state.bias);
-            const maxI = I0 * (Math.exp(refV / Vt_vis) - 1);
-            const scaleI = maxI * 1.25;
-
-            const vMin = -2, vMax = 2;
-            const toX = v => pL + ((v - vMin) / (vMax - vMin)) * plotW;
-            const zeroX = toX(0), zeroY = pT + plotH * 0.8;
-            const toY = cur => zeroY - (cur / scaleI) * (plotH * 0.8);
-
-            // 刻度线与坐标网格
-            ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            for (let v = -2; v <= 2; v++) {
-                const px = toX(v);
-                ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.5;
-                ctx.beginPath(); ctx.moveTo(px, pT); ctx.lineTo(px, ch - pB); ctx.stroke();
-                if (v !== 0) ctx.fillText(v, px, zeroY + 6);
-            }
-
-            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-            const yTicks = [0, scaleI / 2, scaleI];
-            yTicks.forEach(cur => {
-                const py = toY(cur);
-                ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.5;
-                ctx.beginPath(); ctx.moveTo(pL, py); ctx.lineTo(cw - pR, py); ctx.stroke();
-                if (cur !== 0) {
-                    let label = cur < 0.1 ? (cur * 1000).toFixed(0) + 'mA' : cur.toFixed(1) + 'A';
-                    ctx.fillText(label, zeroX - 6, py);
-                }
-            });
-            ctx.fillText('0', zeroX - 6, zeroY + 6);
-
-            // 坐标主轴
-            ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2;
-            ctx.beginPath(); ctx.moveTo(pL, zeroY); ctx.lineTo(cw - pR, zeroY); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(zeroX, pT); ctx.lineTo(zeroX, ch - pB); ctx.stroke(); 
-
-            // 曲线绘制
-            ctx.save(); ctx.beginPath(); ctx.rect(pL, pT, plotW, plotH); ctx.clip(); 
-            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.2; ctx.beginPath();
-            let first = true;
-            for (let v = -2; v <= 2; v += 0.02) {
-                let cur = (v > 0) ? I0 * (Math.exp(v / Vt_vis) - 1) : -I0;
-                let px = toX(v), py = toY(cur);
-                first ? (ctx.moveTo(px, py), first = false) : ctx.lineTo(px, py);
-            }
-            ctx.stroke();
-
-            // 实时工作特征点
-            if (state.stage > 0.9) {
-                const v = state.bias;
-                let cur = (v > 0) ? I0 * (Math.exp(v / Vt_vis) - 1) : -I0;
-                const px = toX(v), py = toY(cur);
-                ctx.fillStyle = '#facc15'; ctx.shadowBlur = 6; ctx.shadowColor = '#facc15';
-                ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-
-                let currentText = Math.abs(cur) < 0.1 ? (cur * 1000).toFixed(1) + ' mA' : cur.toExponential(1) + ' A';
-                ctx.font = 'bold 10px sans-serif'; ctx.fillStyle = '#facc15';
-                ctx.textAlign = px > cw - 70 ? 'right' : 'left';
-                ctx.fillText(` ${v.toFixed(2)}V, ${currentText}`, px > cw - 70 ? px - 8 : px + 8, py - 2);
-            }
-            ctx.restore(); 
-
-            document.getElementById('iv-info').innerHTML = `当前外加偏压: ${state.bias.toFixed(2)} V`;
-        }
-
-        function setSpeed(speed, activeId) {
-            state.speed = speed;
-            ['sp05','sp1','sp2'].forEach(id => {
-                const btn = document.getElementById(id);
-                if(btn) btn.classList.toggle('active', id===activeId);
-            });
-        }
-
-        function buildControls() {
-            const container = document.getElementById('controlPanel');
-            container.innerHTML = `
+            function buildControls() {
+                const container = document.getElementById('controlPanel');
+                container.innerHTML = `
             <div class="panel-section">
                 <h3>🧬 左右侧半导体材料配置</h3>
                 <div class="config-block-wrapper">
@@ -451,7 +774,6 @@
                             <input type="range" id="leftDoping" min="15" max="18" value="16" step="0.2">
                         </div>
                     </div>
-                    
                     <div class="mat-config-block">
                         <div class="mat-top-row">
                             <div style="flex:1;"><label style="font-size:0.7rem; color:#64748b; margin-bottom:4px; display:block;">右侧材料</label><select id="rightMat" style="width:100%;">${Object.keys(mats).map(m=>`<option value="${m}" ${m===state.rightMat?'selected':''}>${m}</option>`).join('')}</select></div>
@@ -464,7 +786,6 @@
                     </div>
                 </div>
             </div>
-            
             <div class="panel-section">
                 <h3>🌡️ 动态演化与偏压控制</h3>
                 <div class="control-row">
@@ -476,80 +797,78 @@
                 </div>
                 <div class="warning-text" id="warningText">⚠️ 请将进度拉到100%完成接触面平衡建立，即可解锁外加偏压。</div>
             </div>`;
-
-            const bind = (id, prop, transform, displayId) => {
-                document.getElementById(id).addEventListener('input', function() {
-                    const val = transform ? transform(this.value) : this.value;
-                    state[prop] = val;
-                    if (displayId && typeof val === 'number') document.getElementById(displayId).textContent = formatDoping(val).replace(' cm⁻³','');
-                    if (id==='stage') {
-                        const stageVal = parseFloat(val);
-                        document.getElementById('stageVal').textContent = Math.round(stageVal*100)+'%';
-                        const biasSlider = document.getElementById('bias');
-                        if (stageVal<1.0) {
-                            biasSlider.disabled = true; state.bias = 0; document.getElementById('bias').value = 0;
-                            document.getElementById('biasVal').textContent = '0.00 V';
-                            document.getElementById('warningText').style.display = 'block';
-                        } else {
-                            biasSlider.disabled = false;
-                            var wt = document.getElementById('warningText'); if(wt) wt.style.display = 'none';
+                const bind = (id, prop, transform, displayId) => {
+                    document.getElementById(id).addEventListener('input', function() {
+                        const val = transform ? transform(this.value) : this.value;
+                        state[prop] = val;
+                        if (displayId && typeof val === 'number') document.getElementById(displayId).textContent = formatDoping(val).replace(' cm⁻³','');
+                        if (id==='stage') {
+                            const stageVal = parseFloat(val);
+                            document.getElementById('stageVal').textContent = Math.round(stageVal*100)+'%';
+                            const biasSlider = document.getElementById('bias');
+                            if (stageVal<1.0) {
+                                biasSlider.disabled = true; state.bias = 0; document.getElementById('bias').value = 0;
+                                document.getElementById('biasVal').textContent = '0.00 V';
+                                document.getElementById('warningText').style.display = 'block';
+                            } else {
+                                biasSlider.disabled = false;
+                                var wt = document.getElementById('warningText'); if(wt) wt.style.display = 'none';
+                            }
                         }
-                    }
-                    if (id==='bias') document.getElementById('biasVal').textContent = parseFloat(val).toFixed(2)+' V';
-                    if (id==='temp') document.getElementById('tempVal').textContent = val;
-                    updateBadge();
-                });
-            };
-            bind('leftMat','leftMat'); bind('leftType','leftType'); bind('leftDoping','leftDoping', v=>Math.pow(10,v), 'leftDopingDisp');
-            bind('rightMat','rightMat'); bind('rightType','rightType'); bind('rightDoping','rightDoping', v=>Math.pow(10,v), 'rightDopingDisp');
-            bind('temp','temp',parseInt); bind('stage','stage',parseFloat); bind('bias','bias',parseFloat);
+                        if (id==='bias') document.getElementById('biasVal').textContent = parseFloat(val).toFixed(2)+' V';
+                        if (id==='temp') document.getElementById('tempVal').textContent = val;
+                        updateBadge();
+                    });
+                };
+                bind('leftMat','leftMat'); bind('leftType','leftType'); bind('leftDoping','leftDoping', v=>Math.pow(10,v), 'leftDopingDisp');
+                bind('rightMat','rightMat'); bind('rightType','rightType'); bind('rightDoping','rightDoping', v=>Math.pow(10,v), 'rightDopingDisp');
+                bind('temp','temp',parseInt); bind('stage','stage',parseFloat); bind('bias','bias',parseFloat);
 
-            document.getElementById('sp05').addEventListener('click', ()=>setSpeed(0.5,'sp05'));
-            document.getElementById('sp1').addEventListener('click', ()=>setSpeed(1.0,'sp1'));
-            document.getElementById('sp2').addEventListener('click', ()=>setSpeed(2.0,'sp2'));
+                document.getElementById('sp05').addEventListener('click', ()=>setSpeed(0.5,'sp05'));
+                document.getElementById('sp1').addEventListener('click', ()=>setSpeed(1.0,'sp1'));
+                document.getElementById('sp2').addEventListener('click', ()=>setSpeed(2.0,'sp2'));
 
-            function updateBadge() {
-                document.getElementById('junction-badge').textContent = `${state.leftType.toUpperCase()}-${state.rightType.toUpperCase()} ${isHomojunction()?'同质结':'异质结'}`;
+                function updateBadge() {
+                    document.getElementById('junction-badge').textContent = `${state.leftType.toUpperCase()}-${state.rightType.toUpperCase()} ${isHomojunction()?'同质结':'异质结'}`;
+                }
+                updateBadge();
             }
-            updateBadge();
-        }
 
-        const bandCanvas = document.getElementById('bandCanvas'); const bandCtx = bandCanvas.getContext('2d');
-        const ivCanvas = document.getElementById('ivCanvas'); const ivCtx = ivCanvas.getContext('2d');
-        let lastTime = performance.now();
+            const bandCanvas = document.getElementById('bandCanvas'); const bandCtx = bandCanvas.getContext('2d');
+            const ivCanvas = document.getElementById('ivCanvas'); const ivCtx = ivCanvas.getContext('2d');
+            let lastTime = performance.now();
 
-        function resizeCanvases() {
-            [bandCanvas, ivCanvas].forEach(canvas => {
-                const dpr = window.devicePixelRatio || 1;
-                const rect = canvas.parentElement.getBoundingClientRect();
-                const cw = rect.width;
-                const ch = rect.height || 320;
-                
-                canvas.width = cw * dpr;
-                canvas.height = ch * dpr;
-                canvas.style.width = cw + 'px';
-                canvas.style.height = ch + 'px';
-                
-                const ctx = canvas.getContext('2d');
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            });
-        }
+            function resizeCanvases() {
+                [bandCanvas, ivCanvas].forEach(canvas => {
+                    const dpr = window.devicePixelRatio || 1;
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    const cw = rect.width;
+                    const ch = rect.height || 320;
+                    canvas.width = cw * dpr;
+                    canvas.height = ch * dpr;
+                    canvas.style.width = cw + 'px';
+                    canvas.style.height = ch + 'px';
+                    const ctx = canvas.getContext('2d');
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                });
+            }
 
-        function animate(now) {
-            const dt = Math.min(0.1, (now-lastTime)/1000); lastTime = now;
-            updateParticles(dt);
-            drawBand(bandCanvas, bandCtx);
-            drawIv(ivCanvas, ivCtx);
-            requestAnimationFrame(animate);
-        }
+            function animate(now) {
+                const dt = Math.min(0.1, (now-lastTime)/1000);
+                lastTime = now;
+                updateParticles(dt);
+                drawBand(bandCanvas, bandCtx);
+                drawIv(ivCanvas, ivCtx);
+                requestAnimationFrame(animate);
+            }
 
-        window.onload = () => { 
-            buildControls(); 
-            resizeCanvases(); 
-            window.addEventListener('resize', resizeCanvases);
-            requestAnimationFrame(animate); 
-        };
-    })();
+            window.onload = () => { 
+                buildControls();
+                resizeCanvases(); 
+                window.addEventListener('resize', resizeCanvases);
+                requestAnimationFrame(animate); 
+            };
+        })();
     </script>
 </body>
 </html>
